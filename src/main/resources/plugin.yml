@@ -1,0 +1,6 @@
+name: McDnd
+version: '${project.version}'
+main: net.serble.mcdnd.Main
+api-version: '1.13'
+authors: [CoPokBl]
+description: A D&D Gamemode for Minecraft Spigot servers

@@ -1,0 +1,7 @@
+- Advantages and disadvantages (low/high ground, close range bow)
+- Add stuff like `2d3-1` to roll 2d3 and subtract 1
+- Fix enemy become when not
+- Add spells with wands
+- Long rest
+- Short rest
+- Dialog
