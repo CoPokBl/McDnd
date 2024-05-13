@@ -42,3 +42,4 @@ bin/
 .DS_Store
 
 target/
+.idea/uiDesigner.xml

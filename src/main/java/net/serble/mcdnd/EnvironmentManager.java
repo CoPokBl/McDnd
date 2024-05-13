@@ -1,14 +1,21 @@
 package net.serble.mcdnd;
 
+import net.serble.mcdnd.ai.*;
 import net.serble.mcdnd.schemas.AbilityScore;
+import net.serble.mcdnd.schemas.Conflict;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.*;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.potion.PotionEffectType;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 public class EnvironmentManager implements Listener {
@@ -106,6 +113,83 @@ public class EnvironmentManager implements Listener {
         }
         entity.removePotionEffect(effectType);
         entity.sendMessage(Utils.t("&7You passed check and lost " + effectType.getTranslationKey().toLowerCase()));
+    }
+
+    @EventHandler
+    public void onMobSpawn(EntitySpawnEvent e) {  // A mob spawned
+        patchMob(e.getEntity());
+    }
+
+    public void patchAllMobs() {
+        for (LivingEntity entity : Objects.requireNonNull(Bukkit.getWorld("world")).getLivingEntities()) {
+            if (entity == null) {
+                Bukkit.getLogger().warning("Got null entity while patching");
+                continue;
+            }
+            try {
+                patchMob(entity);
+            } catch (AssertionError | Exception e) {
+                Bukkit.getLogger().info("Failed to patch entity: " + entity.getName());
+                continue;
+            }
+            Bukkit.getLogger().info("[McDnd Mob Patcher] Patched " + entity.getName());
+        }
+    }
+
+    private void patchMob(Entity entity) {
+        if (!(entity instanceof Mob)) {
+            return;
+        }
+        Mob mob = (Mob) entity;
+
+        switch (mob.getType()) {
+            case ZOMBIE:
+                SpeedyZombie.patchMob(mob);
+                break;
+
+            case SKELETON:
+                AggressiveArcherMob.patchMob(mob, false);
+                break;
+
+            case CREEPER:
+                BoomBoomMob.patchMob(mob);
+                break;
+
+            default:
+                NeutralMob.patchMob(mob);
+                break;
+        }
+
+        mob.setAI(true);
+    }
+
+    @EventHandler
+    public void onFoodLose(FoodLevelChangeEvent e) {
+        e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onEat(PlayerItemConsumeEvent e) {
+        if (e.getItem().getType() == Material.POTION) {
+            return;
+        }
+
+        e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onDespawn(@SuppressWarnings("UnstableApiUsage") EntityRemoveEvent e) {
+        if (!(e.getEntity() instanceof LivingEntity)) {
+            return;
+        }
+
+        Conflict conflict = Main.getInstance().getConflictManager().getConflict((LivingEntity) e.getEntity());
+        if (conflict == null) {
+            return;
+        }
+
+        EntityDeathEvent deathEvent = new EntityDeathEvent((LivingEntity) e.getEntity(), new ArrayList<>());
+        Main.getInstance().getConflictManager().onDeath(deathEvent);
     }
 
 }

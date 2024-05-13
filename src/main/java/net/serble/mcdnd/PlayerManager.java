@@ -9,8 +9,7 @@ import net.serble.mcdnd.schemas.PlayerStats;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -35,6 +34,9 @@ public class PlayerManager implements Listener {
     private final ItemStack dash = Utils.makeItem(Material.LEATHER_BOOTS, "&bDash");
     private final ItemStack friendsMenu = Utils.makeItem(Material.CORNFLOWER, "&aAllies");
     private final ItemStack beFriends = Utils.makeItem(Material.SUNFLOWER, "&eMake Peace");
+    private final ItemStack shortRest = Utils.makeItem(Material.BREAD, "&bShort Rest");
+    private final ItemStack longRest = Utils.makeItem(Material.RED_BED, "&bLong Rest");
+    private final ItemStack spells = Utils.makeItem(Material.BLAZE_ROD, "&eSpells");
 
     public PlayerManager() {
         Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
@@ -122,7 +124,7 @@ public class PlayerManager implements Listener {
 
         Conflict conflict = Main.getInstance().getConflictManager().getConflict(p);
         boolean inConflict = conflict != null;
-        if (stack.isSimilar(endTurn)) {
+        if (stack.isSimilar(endTurn) && inConflict) {
             Main.getInstance().getConflictManager().endPlayersTurn(p);
         }
         if (stack.isSimilar(dash) && inConflict) {
@@ -141,12 +143,78 @@ public class PlayerManager implements Listener {
             p.openInventory(inv);
         }
         if (stack.isSimilar(beFriends) && inConflict) {
-            conflict.votePeace(p);
-            conflict.announce("&6" + p.getName() + "&e has voted for peace");
-            if (conflict.countAlive() <= conflict.countPeopleWantingPeace()) {
-                Main.getInstance().getConflictManager().endConflict(conflict);
+            if (!conflict.doesWantPeace(p)) {
+                conflict.votePeace(p);
+                // Make person neutral to everyone else who has made peace
+                for (LivingEntity other : conflict.getParticipants()) {
+                    if (other == p) {
+                        continue;
+                    }
+                    if (conflict.doesWantPeace(other)) {
+                        Main.getInstance().getTeamManager().setRelationship(p, other, 0);
+                    }
+                }
+
+                conflict.announce("&6" + p.getName() + "&e has voted for peace");
+                if (conflict.countAlive() <= conflict.countPeopleWantingPeace()) {
+                    Main.getInstance().getConflictManager().endConflict(conflict);
+                } else {
+                    Main.getInstance().getConflictManager().checkEndConflict(conflict);
+                }
+            } else {
+                conflict.unvotePeace(p);
+                conflict.announce("&6" + p.getName() + "&c has removed their vote for peace");
             }
         }
+        if (stack.isSimilar(shortRest) && !inConflict) {
+            if (Main.getInstance().getTeamManager().getRemainingShortRests(p) > 0) {
+                shortRest(p);
+            } else {
+                p.sendMessage(Utils.t("&cYou have no remaining short rests"));
+            }
+        }
+        if (stack.isSimilar(longRest) && !inConflict) {
+            if (Main.getInstance().getItemManager().hasAtLeastFood(p, 20)) {
+                longRest(p);
+            } else {
+                p.sendMessage(Utils.t("&cYou don't have enough camp supplies"));
+            }
+        }
+        if (stack.isSimilar(spells)) {
+            // Spells
+        }
+
+        updatePlayer(p);
+    }
+
+    public void shortRest(Player p) {
+        List<LivingEntity> members = Main.getInstance().getTeamManager().getTeamMembers(p);
+        int remainingRests = Main.getInstance().getTeamManager().getRemainingShortRests(p);
+        int newFoodLevel = remainingRests == 1 ? 7 : 15;  // We haven't decremented it yet
+        for (LivingEntity m : members) {
+            double healAmount = Utils.getMaxHealth(m) / 2;
+            Utils.healEntity(m, healAmount);
+            Utils.playSound(Sound.ENTITY_PLAYER_LEVELUP, m);
+            if (m instanceof Player) {
+                ((Player) m).setFoodLevel(newFoodLevel);
+            }
+            m.sendMessage(Utils.t("&aSuccessfully short rested!"));
+        }
+        Main.getInstance().getTeamManager().decrementRemainingShortRests(p);
+    }
+
+    public void longRest(Player p) {
+        List<LivingEntity> members = Main.getInstance().getTeamManager().getTeamMembers(p);
+        for (LivingEntity m : members) {
+            Utils.healEntity(m);
+            Utils.playSound(Sound.ITEM_GOAT_HORN_SOUND_0, m);
+            if (m instanceof Player) {
+                ((Player) m).setFoodLevel(20);
+            }
+            m.sendMessage(Utils.t("&aSuccessfully long rested!"));
+        }
+        Main.getInstance().getItemManager().removeFood(p, 20);
+        Main.getInstance().getTeamManager().replenishShortRests(p);
     }
 
     public void updatePlayer(Player p) {
@@ -163,8 +231,9 @@ public class PlayerManager implements Listener {
         }
 
         inv.setItem(9, friendsMenu);
+        inv.setItem(10, spells);
         if (inCombat) {
-            inv.setItem(10, beFriends);
+            inv.setItem(11, beFriends);
             Conflict conflict = Main.getInstance().getConflictManager().getConflict(p);
 
             // Actual slots and glowing
@@ -174,6 +243,9 @@ public class PlayerManager implements Listener {
                     inv.setItem(16, dash);
                 }
             }
+        } else {
+            inv.setItem(16, shortRest);
+            inv.setItem(17, longRest);
         }
 
     }
@@ -214,7 +286,7 @@ public class PlayerManager implements Listener {
                 return CowSheet.stats;
         }
 
-        Bukkit.getLogger().warning("Could not get stats for entity type: " + e.getType());
+        //Bukkit.getLogger().warning("Could not get stats for entity type: " + e.getType());
         return DefaultSheet.stats;
     }
 
@@ -232,9 +304,9 @@ public class PlayerManager implements Listener {
     public int abilityRoll(LivingEntity p, AbilityScore ability, int adv) {
         int mod = getStatMod(p, ability);
 
-        int roll = Utils.roll(20);
+        int roll = Utils.roll("1d20");
         if (adv != 0) {
-            int roll2 = Utils.roll(20);
+            int roll2 = Utils.roll("1d20");
             if (adv == 1) {
                 roll = Math.max(roll, roll2);
             } else {
@@ -265,6 +337,8 @@ public class PlayerManager implements Listener {
 
         List<String> lines = new ArrayList<>();
         lines.add("&6Armor Class: &7" + Main.getInstance().getCombatManager().calculateArmorClass(player));
+        lines.add("&6Short Rests: &7" + Main.getInstance().getTeamManager().getRemainingShortRests(player));
+        lines.add("&6Camp Supplies: &7" + Main.getInstance().getItemManager().countSupplies(player));
 
         Conflict conflict = Main.getInstance().getConflictManager().getConflict(player);
         if (conflict == null) {
@@ -277,22 +351,31 @@ public class PlayerManager implements Listener {
             lines.add("&7Bonus Actions: " + conflict.currentTurnBonusActionsRemaining);
             lines.add("");
 
+            HashMap<String, Integer> conflictingNames = new HashMap<>();
             for (Combatant enemy : conflict.getTurns()) {  // Turns gives the order
+                String name = enemy.getName();
+                if (conflictingNames.containsKey(name)) {
+                    int amount = conflictingNames.get(name);
+                    conflictingNames.put(name, amount + 1);
+                    name += " " + (amount + 1);
+                } else {
+                    conflictingNames.put(name, 1);
+                }
+
                 if (enemy.isDead()) {
-                    lines.add("&7&m> &6&m" + enemy.getName());
+                    lines.add("&7&m> &6&m" + name);
                     continue;
                 }
-                AttributeInstance maxHealthAtt = enemy.getEntity().getAttribute(Attribute.GENERIC_MAX_HEALTH);
-                assert maxHealthAtt != null;
-                String healthInfo = " &7(" + ((int) enemy.getEntity().getHealth()) + "/" + ((int) maxHealthAtt.getValue()) + ")";
+
+                String healthInfo = " &7(" + ((int) enemy.getEntity().getHealth()) + "/" + ((int) Utils.getMaxHealth(enemy.getEntity())) + ")";
 
                 int relationship = Main.getInstance().getTeamManager().getRelationship(enemy.getEntity(), player);
                 String relColour = relationship == -1 ? "&c" : relationship == 0 ? "&e" : "&a";
 
                 if (conflict.isCurrentTurn(enemy)) {
-                    lines.add("&7&l> " + relColour + "&l" + enemy.getName() + healthInfo);
+                    lines.add("&7&l> " + relColour + "&l" + name + healthInfo);
                 } else {
-                    lines.add("&7> " + relColour + enemy.getName() + healthInfo);
+                    lines.add("&7> " + relColour + name + healthInfo);
                 }
             }
         }

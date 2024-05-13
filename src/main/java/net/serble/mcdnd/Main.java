@@ -1,7 +1,10 @@
 package net.serble.mcdnd;
 
+import net.serble.mcdnd.commands.DndCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.Objects;
 
 public final class Main extends JavaPlugin {
     private static Main instance;
@@ -10,6 +13,7 @@ public final class Main extends JavaPlugin {
     private PlayerManager players;
     private CombatManager combat;
     private EnvironmentManager environment;
+    private CustomItemManager items;
 
     @Override
     public void onEnable() {
@@ -21,18 +25,25 @@ public final class Main extends JavaPlugin {
         players = new PlayerManager();
         combat = new CombatManager();
         environment = new EnvironmentManager();
+        items = new CustomItemManager();
 
         Bukkit.getPluginManager().registerEvents(conflict, this);
         Bukkit.getPluginManager().registerEvents(players, this);
         Bukkit.getPluginManager().registerEvents(combat, this);
         Bukkit.getPluginManager().registerEvents(environment, this);
+        Bukkit.getPluginManager().registerEvents(items, this);
+
+        Objects.requireNonNull(getCommand("dnd")).setExecutor(new DndCommand());
+
+        // Enable the AI of all LivingEntities in the world
+        getEnvironmentManager().patchAllMobs();
 
         Bukkit.getLogger().info("McDnd has been enabled!");
     }
 
     @Override
     public void onDisable() {
-
+        getConflictManager().endAllConflicts();
     }
 
     public static Main getInstance() {
@@ -57,6 +68,10 @@ public final class Main extends JavaPlugin {
 
     public EnvironmentManager getEnvironmentManager() {
         return environment;
+    }
+
+    public CustomItemManager getItemManager() {
+        return items;
     }
 
 }

@@ -114,7 +114,6 @@ public class CombatManager implements Listener {
         }
 
         ItemStack heldItem = Objects.requireNonNull(entity.getEquipment()).getItemInMainHand();
-        migrateIfVanilla(heldItem);
 
         // Potions
         if (e.getEntity() instanceof ThrownPotion) {
@@ -182,8 +181,6 @@ public class CombatManager implements Listener {
     }
 
     private String getWeaponType(ItemStack item) {
-        migrateIfVanilla(item);
-
         boolean isCustom = NbtHandler.itemStackHasTag(item, "customitem", PersistentDataType.STRING);
 
         if (isCustom) {
@@ -207,7 +204,6 @@ public class CombatManager implements Listener {
     }
 
     private int getArmorBonus(ItemStack item) {
-        migrateIfVanilla(item);
         boolean isCustom = NbtHandler.itemStackHasTag(item, "customitem", PersistentDataType.STRING);
 
         if (isCustom && Objects.equals(NbtHandler.itemStackGetTag(item, "customitem", PersistentDataType.STRING), "armor")) {
@@ -226,45 +222,6 @@ public class CombatManager implements Listener {
 
         conditionalSend(attacker, "&oEnemy AC: " + enemyArmorClass + ", Roll Bonus: " + attackRollBonus + ", Roll: " + roll);
         return roll >= enemyArmorClass;
-    }
-
-    private void migrateIfVanilla(ItemStack item) {
-        if (item == null) {
-            return;
-        }
-
-        if (NbtHandler.itemStackHasTag(item, "customitem", PersistentDataType.STRING)) {
-            return;
-        }
-
-        int swordType = getSwordType(item);
-        if (swordType != 0) {
-            String roll = swordType + "d4";
-            NbtHandler.itemStackSetTag(item, "customitem", PersistentDataType.STRING, "melee");
-            NbtHandler.itemStackSetTag(item, "damageroll", PersistentDataType.STRING, roll);
-            Utils.setLore(item,
-                    "&6Melee weapon",
-                    "&7Damage: &6" + Utils.getRollDisplayRange(roll));
-        }
-
-        int armorType = getItemArmorBonus(item);
-        if (armorType != 0) {
-            NbtHandler.itemStackSetTag(item, "customitem", PersistentDataType.STRING, "armor");
-            NbtHandler.itemStackSetTag(item, "armorbonus", PersistentDataType.INTEGER, armorType);
-            Utils.setLore(item,
-                    "&6Armor",
-                    "&7Armor Class: &6" + (10 + armorType));
-        }
-
-        int rangedType = getRangedWeaponType(item);
-        if (rangedType != 0) {
-            String roll = "1d" + (4 + (rangedType*2));
-            NbtHandler.itemStackSetTag(item, "customitem", PersistentDataType.STRING, "ranged");
-            NbtHandler.itemStackSetTag(item, "damageroll", PersistentDataType.STRING, roll);
-            Utils.setLore(item,
-                    "&6Ranged weapon",
-                    "&7Damage: &6" + Utils.getRollDisplayRange(roll));
-        }
     }
 
     public int calculateArmorClass(LivingEntity e) {
@@ -315,83 +272,6 @@ public class CombatManager implements Listener {
         return Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.STRENGTH);
     }
 
-    private int getSwordType(ItemStack item) {
-        switch (item.getType()) {
-            case WOODEN_SWORD:
-                return 1;
-            case STONE_SWORD:
-                return 2;
-            case IRON_SWORD:
-                return 3;
-            case DIAMOND_SWORD:
-                return 4;
-            case NETHERITE_SWORD:
-                return 5;
-        }
 
-        return 0;
-    }
-
-    private int getRangedWeaponType(ItemStack item) {
-        switch (item.getType()) {
-            case BOW:
-                return 1;
-            case CROSSBOW:
-                return 2;
-        }
-
-        return 0;
-    }
-
-    private int getItemArmorBonus(ItemStack item) {
-        String[] parts = item.getType().name().split("_");
-        String secondPart = parts.length > 1 ? parts[1] : "";
-
-        int pieceModifier = 0;
-
-        switch (secondPart) {
-            case "HELMET":
-                pieceModifier = -1;
-                break;
-
-            case "CHESTPLATE":
-                break;
-
-            case "LEGGINGS":
-            case "BOOTS":
-                pieceModifier = -2;
-                break;
-
-            default:
-                return 0;
-        }
-
-        // It's armor
-        String type = parts[0];
-        int typeValue = 0;
-
-        switch (type) {
-            case "LEATHER":
-                typeValue = 1;
-                break;
-            case "CHAINMAIL":
-                typeValue = 1;
-                break;
-            case "GOLD":
-                typeValue = 1;
-                break;
-            case "IRON":
-                typeValue = 2;
-                break;
-            case "DIAMOND":
-                typeValue = 3;
-                break;
-            case "NETHERITE":
-                typeValue = 4;
-                break;
-        }
-
-        return Utils.clamp(typeValue + pieceModifier, 1, 10);
-    }
 
 }

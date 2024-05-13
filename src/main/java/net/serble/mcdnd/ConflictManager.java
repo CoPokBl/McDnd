@@ -187,6 +187,8 @@ public class ConflictManager implements Listener {
                 return false;
             }
 
+            Utils.setTarget(defender, aggressor);
+            Utils.setTarget(aggressor, defender);
             startConflict(aggressor, defender);
             return false;
         }
@@ -213,13 +215,21 @@ public class ConflictManager implements Listener {
         conflict.announce(Utils.t(msg));
         if (!isFree) conflict.currentTurnActionsRemaining--;
 
-        if (!(turnEntity instanceof Player)) {
+        if (!(turnEntity instanceof Player) && !turnEntity.getScoreboardTags().contains("noautoendturn")) {
             endTurn(conflict);
         }
         return false;
     }
 
-    public void endPlayersTurn(Player p) {
+    public void endAllConflicts() {
+        List<Conflict> dupe = new ArrayList<>(conflicts);
+        for (Conflict conflict : dupe) {
+            conflict.announce("&ePeace across the lands!!!");
+            endConflict(conflict);
+        }
+    }
+
+    public void endPlayersTurn(LivingEntity p) {
         Conflict conflict = getConflict(p);
         if (conflict == null) {
             p.sendMessage(Utils.t("&cYou are not in combat"));
@@ -282,6 +292,12 @@ public class ConflictManager implements Listener {
             if (didStop.get()) {
                 throw new RuntimeException("ALREADY STOPPED WTF");
             }
+
+            if (conflict.getCurrentTurnEntity().isDead()) {
+                endTurn(conflict);
+                return;
+            }
+
             Location newPos = conflict.getCurrentTurnEntity().getLocation();
             Vector oldPosVec = lastLoc.get().toVector();
             Vector newPosVec = newPos.toVector();
@@ -349,6 +365,10 @@ public class ConflictManager implements Listener {
         }
 
         // Check to see if anyone is enemys
+        checkEndConflict(conflict);
+    }
+
+    public void checkEndConflict(Conflict conflict) {
         if (!conflict.isAnyoneMad()) {
             endConflict(conflict);
         }

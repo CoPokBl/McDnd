@@ -7,14 +7,18 @@ import net.serble.mcdnd.schemas.Combatant;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.util.NumberConversions;
+import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class Utils {
 
@@ -22,24 +26,25 @@ public class Utils {
         return ChatColor.translateAlternateColorCodes('&', msg);
     }
 
-    public static int roll(int sides) {
-        return (int) (Math.random() * sides) + 1;
-    }
+    public static int roll(String str) {
+        String[] parts1 = str.split("d");
+        if (parts1.length != 2) {
+            throw new RuntimeException("Invalid die format");
+        }
 
-    public static int roll(int dice, int sides) {
+        String[] parts2 = parts1[1].split("\\+");
+        int sides = Integer.parseInt(parts2[0]);
+        int dice = Integer.parseInt(parts1[0]);
+        int addition = 0;
+        if (parts2.length > 1) {
+            addition = Integer.parseInt(parts2[1]);
+        }
+
         int total = 0;
         for (int i = 0; i < dice; i++) {
-            total += roll(sides);
+            total += (int) (Math.random() * sides) + 1;
         }
-        return total;
-    }
-
-    public static int roll(Tuple<Integer, Integer> tuple) {
-        return roll(tuple.a(), tuple.b());
-    }
-
-    public static int roll(String str) {
-        return roll(Objects.requireNonNull(parseRollString(str)));
+        return total + addition;
     }
 
     // Parse things like 1d4 or 2d20
@@ -129,6 +134,33 @@ public class Utils {
         meta.setDisplayName(t("&6" + p.getName()));
         head.setItemMeta(meta);
         return head;
+    }
+
+    public static double getMaxHealth(LivingEntity entity) {
+        AttributeInstance maxHealthAtt = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        assert maxHealthAtt != null;
+        return maxHealthAtt.getValue();
+    }
+
+    public static void healEntity(LivingEntity entity, double amount) {
+        double health = entity.getHealth();
+        double maxHealth = getMaxHealth(entity);
+        double newHealth = Math.min(health + amount, maxHealth);
+        entity.setHealth(newHealth);
+    }
+
+    public static void healEntity(LivingEntity entity) {
+        healEntity(entity, 99999);
+    }
+
+    public static void setTarget(LivingEntity entity, LivingEntity target) {
+        if (entity instanceof Mob) {
+            ((Mob) entity).setTarget(target);
+        }
+    }
+
+    public static boolean isFinite(Vector vec) {
+        return NumberConversions.isFinite(vec.getX()) && NumberConversions.isFinite(vec.getY()) && NumberConversions.isFinite(vec.getZ());
     }
 
 }

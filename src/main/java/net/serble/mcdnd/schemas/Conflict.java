@@ -2,6 +2,7 @@ package net.serble.mcdnd.schemas;
 
 import net.serble.mcdnd.Main;
 import net.serble.mcdnd.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
@@ -15,7 +16,7 @@ public class Conflict {
     private final List<LivingEntity> participants = new ArrayList<>();
     private Combatant[] turns;
     private int currentTurn = 0;
-    private List<LivingEntity> peopleWantingPeace = new ArrayList<>();
+    private final List<LivingEntity> peopleWantingPeace = new ArrayList<>();
 
     public double currentTurnMovementRemaining = BaseMovement;
     public int currentTurnActionsRemaining = 1;
@@ -33,6 +34,14 @@ public class Conflict {
         if (!peopleWantingPeace.contains(e)) {
             peopleWantingPeace.add(e);
         }
+    }
+
+    public void unvotePeace(LivingEntity e) {
+        peopleWantingPeace.remove(e);
+    }
+
+    public boolean doesWantPeace(LivingEntity e) {
+        return peopleWantingPeace.contains(e);
     }
 
     public int countPeopleWantingPeace() {
@@ -54,6 +63,10 @@ public class Conflict {
             currentMovementTask.cancel();
         }
         updateParticipants();
+
+        for (LivingEntity e : getParticipants()) {
+            e.setAI(true);
+        }
     }
 
     public void updateParticipants() {
@@ -119,8 +132,17 @@ public class Conflict {
     }
 
     public void incrementTurn() {
+        int attempts = 0;
         do {  // Change turn to first non-dead combatant
+            if (attempts > 1000) {
+                // Dump some info
+                for (Combatant c : turns) {
+                    Bukkit.getLogger().info(c.getEntity().getName() + " is dead: " + c.isDead());
+                }
+                throw new RuntimeException("Infinite loop detected");
+            }
             currentTurn++;
+            attempts++;
             if (currentTurn >= turns.length) {
                 currentTurn = 0;
             }
