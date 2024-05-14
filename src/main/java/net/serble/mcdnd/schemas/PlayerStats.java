@@ -1,105 +1,114 @@
 package net.serble.mcdnd.schemas;
 
-public class PlayerStats {
-    private int Dexterity;
-    private int Charisma;
-    private int Strength;
-    private int Intelligence;
-    private int Wisdom;
-    private int Constitution;
+import net.serble.mcdnd.classes.DndClass;
 
-    public PlayerStats() { }
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
-    public PlayerStats(int dex, int cha, int str, int inte, int wis, int con) {
-        setDexterity(dex);
-        setCharisma(cha);
-        setStrength(str);
-        setIntelligence(inte);
-        setWisdom(wis);
-        setConstitution(con);
+public abstract class PlayerStats {
+    protected int level = 1;
+    protected int maxHealth = 20;
+
+    protected int dexterity;
+    protected int charisma;
+    protected int strength;
+    protected int intelligence;
+    protected int wisdom;
+    protected int constitution;
+
+    protected final HashMap<Integer, Integer> spellSlots = new HashMap<>();
+    protected final List<WeaponTypes> weaponProficiencies = new ArrayList<>();
+    protected final List<Skill> skillProficiencies = new ArrayList<>();
+    protected final List<AbilityScore> savingThrowProficiencies = new ArrayList<>();
+    protected int bonusActions = 1;
+    protected int proficiencyBonus = 2;
+
+    public PlayerStats() {
+
     }
 
-    private int checkValue(int val) {
-        if (val < 0 || val > 20) {
-            throw new RuntimeException("Invalid value");
-        }
-        return val;
+    private int checkValue(int val) {  // Ensure value is within bounds
+        return Math.min(20, Math.max(0, val));
     }
 
-    public static PlayerStats newRandom() {
-        PlayerStats stats = new PlayerStats();
-        stats.setDexterity((int) (Math.random() * 19) + 1);
-        stats.setCharisma((int) (Math.random() * 19) + 1);
-        stats.setStrength((int) (Math.random() * 19) + 1);
-        stats.setIntelligence((int) (Math.random() * 19) + 1);
-        stats.setWisdom((int) (Math.random() * 19) + 1);
-        stats.setConstitution((int) (Math.random() * 19) + 1);
-        return stats;
+    public PlayerStats randomise() {
+        setDexterity((int) (Math.random() * 19) + 1);
+        setCharisma((int) (Math.random() * 19) + 1);
+        setStrength((int) (Math.random() * 19) + 1);
+        setIntelligence((int) (Math.random() * 19) + 1);
+        setWisdom((int) (Math.random() * 19) + 1);
+        setConstitution((int) (Math.random() * 19) + 1);
+        return this;
     }
 
     public int get(AbilityScore score) {
         switch (score) {
-            case DEXTERITY:
-                return getDexterity();
-            case WISDOM:
-                return getWisdom();
-            case CHARISMA:
-                return getCharisma();
-            case STRENGTH:
-                return getStrength();
-            case CONSTITUTION:
-                return getConstitution();
-            case INTELLIGENCE:
-                return getIntelligence();
+            case Dexterity:
+                return dexterity;
+            case Wisdom:
+                return wisdom;
+            case Charisma:
+                return charisma;
+            case Strength:
+                return strength;
+            case Constitution:
+                return constitution;
+            case Intelligence:
+                return intelligence;
         }
         throw new RuntimeException("Invalid ability score");
     }
 
-    public int getDexterity() {
-        return Dexterity;
+    public abstract DndClass getDndClass();
+
+    public abstract void setLevel(int lvl);
+
+    public void incrementLevel() {
+        setLevel(level + 1);
     }
 
     public void setDexterity(int dexterity) {
-        Dexterity = checkValue(dexterity);
-    }
-
-    public int getCharisma() {
-        return Charisma;
+        this.dexterity = checkValue(dexterity);
     }
 
     public void setCharisma(int charisma) {
-        Charisma = checkValue(charisma);
-    }
-
-    public int getStrength() {
-        return Strength;
+        this.charisma = checkValue(charisma);
     }
 
     public void setStrength(int strength) {
-        Strength = checkValue(strength);
-    }
-
-    public int getIntelligence() {
-        return Intelligence;
+        this.strength = checkValue(strength);
     }
 
     public void setIntelligence(int intelligence) {
-        Intelligence = checkValue(intelligence);
-    }
-
-    public int getWisdom() {
-        return Wisdom;
+        this.intelligence = checkValue(intelligence);
     }
 
     public void setWisdom(int wisdom) {
-        Wisdom = checkValue(wisdom);
-    }
-
-    public int getConstitution() {
-        return Constitution;
+        this.wisdom = checkValue(wisdom);
     }
 
     public void setConstitution(int constitution) {
-        Constitution = checkValue(constitution);
+        this.constitution = checkValue(constitution);
+    }
+
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+
+    public boolean isProficient(WeaponTypes type) {
+        return weaponProficiencies.contains(type);
+    }
+
+    public boolean isProficient(Skill type) {
+        return skillProficiencies.contains(type);
+    }
+
+    public boolean isProficient(AbilityScore type) {  // Saving throw
+        return savingThrowProficiencies.contains(type);
+    }
+
+    public int getProficiencyBonus() {
+        return proficiencyBonus;
     }
 }

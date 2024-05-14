@@ -1,11 +1,9 @@
 package net.serble.mcdnd;
 
+import net.serble.mcdnd.classes.Rouge;
 import net.serble.mcdnd.mobsheets.CowSheet;
 import net.serble.mcdnd.mobsheets.DefaultSheet;
-import net.serble.mcdnd.schemas.AbilityScore;
-import net.serble.mcdnd.schemas.Combatant;
-import net.serble.mcdnd.schemas.Conflict;
-import net.serble.mcdnd.schemas.PlayerStats;
+import net.serble.mcdnd.schemas.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -50,16 +48,12 @@ public class PlayerManager implements Listener {
     public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
 
-        PlayerStats randomStats = PlayerStats.newRandom();
-        playerStats.put(p.getUniqueId(), randomStats);
-
-        p.sendMessage(Utils.t("Dexterity: " + randomStats.getDexterity()));
-        p.sendMessage(Utils.t("Strength: " + randomStats.getStrength()));
-        p.sendMessage(Utils.t("Charisma: " + randomStats.getCharisma()));
-        p.sendMessage(Utils.t("Intelligence: " + randomStats.getIntelligence()));
-        p.sendMessage(Utils.t("Wisdom: " + randomStats.getWisdom()));
-        p.sendMessage(Utils.t("Constitution: " + randomStats.getConstitution()));
-
+        if (playerStats.containsKey(p.getUniqueId())) {
+            p.sendMessage(Utils.t("&aWelcome back :)"));
+        } else {
+            PlayerStats randomStats = new Rouge().randomise();
+            playerStats.put(p.getUniqueId(), randomStats);
+        }
         updatePlayer(p);
     }
 
@@ -232,8 +226,23 @@ public class PlayerManager implements Listener {
 
         inv.setItem(9, friendsMenu);
         inv.setItem(10, spells);
+
+        // Stats item
+        PlayerStats stats = getStatsFor(p);
+        ItemStack statsItem = Utils.makeItem(Material.EMERALD, "&aCharacter Profile");
+        Utils.setLore(statsItem,
+                "&6&l" + stats.getDndClass().getName(),
+                "&6Dexterity: &7" + stats.get(AbilityScore.Dexterity),
+                "&6Charisma: &7" + stats.get(AbilityScore.Charisma),
+                "&6Strength: &7" + stats.get(AbilityScore.Strength),
+                "&6Intelligence: &7" + stats.get(AbilityScore.Intelligence),
+                "&6Wisdom: &7" + stats.get(AbilityScore.Wisdom),
+                "&6Constitution: &7" + stats.get(AbilityScore.Constitution)
+                );
+        inv.setItem(11, statsItem);
+
         if (inCombat) {
-            inv.setItem(11, beFriends);
+            inv.setItem(12, beFriends);
             Conflict conflict = Main.getInstance().getConflictManager().getConflict(p);
 
             // Actual slots and glowing
@@ -275,7 +284,7 @@ public class PlayerManager implements Listener {
         return inv;
     }
 
-    private PlayerStats getStatsFor(LivingEntity e) {
+    public PlayerStats getStatsFor(LivingEntity e) {
         if (playerStats.containsKey(e.getUniqueId())) {
             return playerStats.get(e.getUniqueId());
         }
@@ -294,11 +303,17 @@ public class PlayerManager implements Listener {
         return abilityRoll(p, ability, adv) >= passValue;
     }
 
+    public boolean savingThrow(LivingEntity p, AbilityScore ability, int passValue) {
+        PlayerStats stats = getStatsFor(p);
+        int prof = stats.isProficient(ability) ? stats.getProficiencyBonus() : 0;
+        return abilityRoll(p, ability, 0) + prof >= passValue;
+    }
+
     public int getStatMod(LivingEntity p, AbilityScore ability) {
         PlayerStats stats = getStatsFor(p);
         int stat = stats.get(ability);
 
-        return (int) (double) ((stat - 10) / 2);
+        return Utils.getStatMod(stat);
     }
 
     public int abilityRoll(LivingEntity p, AbilityScore ability, int adv) {
@@ -322,6 +337,10 @@ public class PlayerManager implements Listener {
         }
 
         return roll + mod;
+    }
+
+    public int abilityRoll(LivingEntity p, Skill skill, int adv) {
+        return abilityRoll(p, skill.getRollType(), adv);
     }
 
     private void updateScoreboard(Player player) {

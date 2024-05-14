@@ -47,12 +47,8 @@ public class CombatManager implements Listener {
 
         applyBadKarma(damagee, damager);
 
-        boolean isPlayer = damager instanceof Player;
         ItemStack heldItem = Objects.requireNonNull(damager.getEquipment()).getItemInMainHand();
-        String itemType = "fist";
-        if (heldItem != null) {
-            itemType = getWeaponType(heldItem);
-        }
+        String itemType = getWeaponType(heldItem);
 
         if (!Objects.equals(itemType, "melee")) {  // You can't use it for melee
             itemType = "fist";
@@ -69,13 +65,14 @@ public class CombatManager implements Listener {
             return;
         }
 
-        String damageRoll = "";
+        String damageRoll;
         if (Objects.equals(itemType, "fist")) {
             damageRoll = "1d4";
         } else {
             damageRoll = NbtHandler.itemStackGetTag(heldItem, "damageroll", PersistentDataType.STRING);
         }
 
+        assert damageRoll != null;
         int roll = Utils.roll(damageRoll);
         e.setDamage(roll);
         if (damager instanceof Player) {
@@ -128,10 +125,9 @@ public class CombatManager implements Listener {
             }
         }
 
-        String itemType = "fist";
-        itemType = getWeaponType(heldItem);
+        String itemType = getWeaponType(heldItem);
 
-        String damageRoll = "";
+        String damageRoll;
         if (Objects.equals(itemType, "fist")) {
             damageRoll = "1d4";
         } else {
@@ -262,14 +258,14 @@ public class CombatManager implements Listener {
             current += 2;
         }
 
-        return current + Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.DEXTERITY);
+        return current + Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.Dexterity);
     }
 
     private int calculateAttackBonus(LivingEntity e, boolean isRanged) {
         if (isRanged) {
-            return Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.DEXTERITY);
+            return Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.Dexterity);
         }
-        return Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.STRENGTH);
+        return Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.Strength);
     }
 
 

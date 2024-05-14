@@ -78,7 +78,7 @@ public class ConflictManager implements Listener {
         // Roll for initiative
         HashMap<LivingEntity, Integer> initiatives = new HashMap<>();
         for (LivingEntity m : actualMembers) {
-            int in = Main.getInstance().getPlayerManager().abilityRoll(m, AbilityScore.DEXTERITY, 0);
+            int in = Main.getInstance().getPlayerManager().abilityRoll(m, AbilityScore.Dexterity, 0);
             conflict.announce(Utils.t("&6" + m.getName() + "&a rolled &6" + in + "&a for initiative"));
             initiatives.put(m, in);
 

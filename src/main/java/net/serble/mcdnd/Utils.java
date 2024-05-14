@@ -163,4 +163,8 @@ public class Utils {
         return NumberConversions.isFinite(vec.getX()) && NumberConversions.isFinite(vec.getY()) && NumberConversions.isFinite(vec.getZ());
     }
 
+    public static int getStatMod(int stat) {
+        return (int) (double) ((stat - 10) / 2);
+    }
+
 }

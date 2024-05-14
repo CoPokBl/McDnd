@@ -36,7 +36,7 @@ public class EnvironmentManager implements Listener {
 
             case BLOCK_EXPLOSION:
             case ENTITY_EXPLOSION:
-                boolean saved = Main.getInstance().getPlayerManager().abilityCheck(entity, AbilityScore.DEXTERITY, 15, 0);
+                boolean saved = Main.getInstance().getPlayerManager().savingThrow(entity, AbilityScore.Dexterity, 15);
                 if (saved) {
                     e.setDamage(e.getDamage() / 2);
                     entity.sendMessage(Utils.t("&aYou successfully saved against explosion"));
@@ -80,19 +80,19 @@ public class EnvironmentManager implements Listener {
         if (entity.hasPotionEffect(PotionEffectType.POISON)) {
             int damage = Utils.roll("1d4");
             entity.damage(damage);
-            trySave(entity, PotionEffectType.POISON, AbilityScore.CONSTITUTION, 15);
+            trySave(entity, PotionEffectType.POISON, AbilityScore.Constitution, 15);
         }
 
         if (entity.hasPotionEffect(PotionEffectType.WITHER)) {
             int damage = Utils.roll("1d6");
             entity.damage(damage);
-            trySave(entity, PotionEffectType.WITHER, AbilityScore.CONSTITUTION, 17);
+            trySave(entity, PotionEffectType.WITHER, AbilityScore.Constitution, 17);
         }
 
         if (entity.getFireTicks() > 0) {
             int damage = Utils.roll("1d6");
             entity.damage(damage);
-            if (Main.getInstance().getPlayerManager().abilityCheck(entity, AbilityScore.CONSTITUTION, 10, 0)) {
+            if (Main.getInstance().getPlayerManager().savingThrow(entity, AbilityScore.Constitution, 10)) {
                 entity.setFireTicks(0);
                 entity.sendMessage(Utils.t("&7You passed check and lost fire"));
             }
@@ -107,7 +107,7 @@ public class EnvironmentManager implements Listener {
     }
 
     private void trySave(LivingEntity entity, PotionEffectType effectType, AbilityScore ability, int dc) {
-        if (!Main.getInstance().getPlayerManager().abilityCheck(entity, ability, dc, 0)) {
+        if (!Main.getInstance().getPlayerManager().savingThrow(entity, ability, dc)) {
             // Fail
             return;
         }

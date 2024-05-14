@@ -1,5 +1,3 @@
 - Advantages and disadvantages (low/high ground, close range bow)
-- Fix enemy become when not
 - Add spells with wands
 - Dialog
-- Mobs same type break leaderboard
