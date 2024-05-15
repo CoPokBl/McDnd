@@ -1,7 +1,10 @@
 package net.serble.mcdnd.classes;
 
 import net.serble.mcdnd.Utils;
+import net.serble.mcdnd.actions.spells.FireBolt;
+import net.serble.mcdnd.schemas.AbilityScore;
 import net.serble.mcdnd.schemas.PlayerStats;
+import org.bukkit.Bukkit;
 
 public class Rouge extends PlayerStats {
 
@@ -26,9 +29,16 @@ public class Rouge extends PlayerStats {
     @Override
     public void setLevel(int lvl) {
         level = lvl;
+        savingThrowProficiencies.clear();
+        weaponProficiencies.clear();
+
+        savingThrowProficiencies.add(AbilityScore.Dexterity);
+        savingThrowProficiencies.add(AbilityScore.Intelligence);
+
         switch (lvl) {
             case 1:
                 maxHealth = 8 + Utils.getStatMod(constitution);
+                Bukkit.getLogger().info("Max Health: " + maxHealth + ", const mod: " + Utils.getStatMod(constitution) + ", const: " + constitution);
                 break;
 
             case 12:
@@ -49,6 +59,7 @@ public class Rouge extends PlayerStats {
         switch (lvl) {
             case 1:
             case 2:
+                actions.add(new FireBolt());
             case 3:
             case 4:
                 proficiencyBonus = 2;

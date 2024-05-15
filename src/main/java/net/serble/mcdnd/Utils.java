@@ -4,9 +4,7 @@ import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.serble.mcdnd.schemas.Combatant;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
@@ -14,11 +12,14 @@ import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Utils {
 
@@ -45,6 +46,18 @@ public class Utils {
             total += (int) (Math.random() * sides) + 1;
         }
         return total + addition;
+    }
+
+    public static int roll(String str, int adv) {
+        int roll1 = roll(str);
+
+        if (adv == 0) {
+            return roll1;
+        }
+
+        int roll2 = roll(str);
+
+        return adv == 1 ? Math.max(roll1, roll2) : Math.min(roll1, roll2);
     }
 
     // Parse things like 1d4 or 2d20
@@ -142,6 +155,12 @@ public class Utils {
         return maxHealthAtt.getValue();
     }
 
+    public static void setMaxHealth(LivingEntity entity, double amount) {
+        AttributeInstance maxHealthAtt = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        assert maxHealthAtt != null;
+        maxHealthAtt.setBaseValue(amount);
+    }
+
     public static void healEntity(LivingEntity entity, double amount) {
         double health = entity.getHealth();
         double maxHealth = getMaxHealth(entity);
@@ -167,4 +186,31 @@ public class Utils {
         return (int) (double) ((stat - 10) / 2);
     }
 
+    public static void particleStream(Location from, Location to, Particle particle) {
+        Vector direction = to.toVector().subtract(from.toVector()).normalize();
+        Location current = from.clone();
+        while (current.distance(to) > 0.5) {
+            current.add(direction);
+            Objects.requireNonNull(from.getWorld()).spawnParticle(particle, current, 1);
+        }
+    }
+
+    public static void particleStream(Location from, Location to, Particle particle, int ticks) {
+        Vector direction = to.toVector().subtract(from.toVector()).normalize().multiply(0.1);
+
+        AtomicReference<Integer> timesRan = new AtomicReference<>(0);
+        AtomicReference<BukkitTask> runningTask = new AtomicReference<>();
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
+            Location current = from.clone();
+            while (current.distance(to) > 0.5) {
+                current.add(direction);
+                Objects.requireNonNull(from.getWorld()).spawnParticle(particle, current, 1);
+            }
+            timesRan.set(timesRan.get() + 1);
+            if (timesRan.get() >= ticks) {
+                runningTask.get().cancel();
+            }
+        }, 0, 1);
+        runningTask.set(task);
+    }
 }

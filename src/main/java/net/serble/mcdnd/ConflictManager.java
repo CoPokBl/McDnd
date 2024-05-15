@@ -79,8 +79,9 @@ public class ConflictManager implements Listener {
         HashMap<LivingEntity, Integer> initiatives = new HashMap<>();
         for (LivingEntity m : actualMembers) {
             int in = Main.getInstance().getPlayerManager().abilityRoll(m, AbilityScore.Dexterity, 0);
-            conflict.announce(Utils.t("&6" + m.getName() + "&a rolled &6" + in + "&a for initiative"));
             initiatives.put(m, in);
+            String inName = in == Integer.MAX_VALUE ? "20 (Critical Success)" : in == Integer.MIN_VALUE ? "1 (Critical Failure)" : String.valueOf(in);
+            conflict.announce(Utils.t("&6" + m.getName() + "&a rolled &6" + inName + "&a for initiative"));
 
             if (!(m instanceof Player)) {
                 m.setAI(false);

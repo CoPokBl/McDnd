@@ -4,6 +4,7 @@ import net.serble.mcdnd.Main;
 import net.serble.mcdnd.Utils;
 import net.serble.mcdnd.ai.SpeedyZombie;
 import net.serble.mcdnd.classes.Rouge;
+import net.serble.mcdnd.schemas.PlayerStats;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -46,6 +47,23 @@ public class DndCommand implements CommandExecutor {
 
         if (Objects.equals(args[0], "isrouge")) {
             s(p, "Is rouge: " + (Main.getInstance().getPlayerManager().getStatsFor(p) instanceof Rouge));
+            return true;
+        }
+
+        if (Objects.equals(args[0], "maxhealth")) {
+            PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(p);
+            s(p, String.valueOf(stats.getMaxHealth()));
+            return true;
+        }
+
+        if (Objects.equals(args[0], "setlevel")) {
+            if (args.length < 2) {
+                s(p, "&c/dnd setlevel <level>");
+                return false;
+            }
+            PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(p);
+            stats.setLevel(Integer.parseInt(args[1]));
+            s(p, "&aSet level to " + args[1]);
             return true;
         }
 

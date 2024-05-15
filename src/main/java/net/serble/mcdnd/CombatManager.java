@@ -1,9 +1,11 @@
 package net.serble.mcdnd;
 
-import net.serble.mcdnd.schemas.AbilityScore;
-import net.serble.mcdnd.schemas.Conflict;
+import net.serble.mcdnd.actions.Action;
+import net.serble.mcdnd.schemas.*;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -11,15 +13,19 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
 
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
 
 public class CombatManager implements Listener {
+    private final HashMap<UUID, Action> actionsWaitingForTarget = new HashMap<>();
 
     private void conditionalSend(LivingEntity p, String msg) {
         if (!Main.getInstance().getConflictManager().isInCombat(p)) {
@@ -48,13 +54,13 @@ public class CombatManager implements Listener {
         applyBadKarma(damagee, damager);
 
         ItemStack heldItem = Objects.requireNonNull(damager.getEquipment()).getItemInMainHand();
-        String itemType = getWeaponType(heldItem);
+        WeaponProfile weapon = getWeaponProfile(heldItem);
 
-        if (!Objects.equals(itemType, "melee")) {  // You can't use it for melee
-            itemType = "fist";
+        if (weapon.isRanged()) {  // You can't use it for melee
+            weapon = WeaponProfile.getFist();
         }
 
-        if (!rollForHit(damager, damagee, false)) {
+        if (!rollForHit(damager, damagee, weapon)) {
             e.setCancelled(true);
             if (damagee instanceof Mob) {
                 Mob mob = (Mob) damagee;
@@ -65,15 +71,7 @@ public class CombatManager implements Listener {
             return;
         }
 
-        String damageRoll;
-        if (Objects.equals(itemType, "fist")) {
-            damageRoll = "1d4";
-        } else {
-            damageRoll = NbtHandler.itemStackGetTag(heldItem, "damageroll", PersistentDataType.STRING);
-        }
-
-        assert damageRoll != null;
-        int roll = Utils.roll(damageRoll);
+        int roll = Utils.roll(weapon.getDamageRoll());
         e.setDamage(roll);
         if (damager instanceof Player) {
             conditionalSend(damager, "&aRolled &6" + roll + "&a and dealt &6" + roll + "&a damage");
@@ -125,16 +123,13 @@ public class CombatManager implements Listener {
             }
         }
 
-        String itemType = getWeaponType(heldItem);
+        WeaponProfile weapon = getWeaponProfile(heldItem);
 
-        String damageRoll;
-        if (Objects.equals(itemType, "fist")) {
-            damageRoll = "1d4";
-        } else {
-            damageRoll = NbtHandler.itemStackGetTag(heldItem, "damageroll", PersistentDataType.STRING);
-        }
+        PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(entity);
+        int prof = stats.isProficient(weapon.getType()) ? stats.getProficiencyBonus() : 0;
 
-        e.getEntity().addScoreboardTag("mcdndproj" + damageRoll);
+        e.getEntity().addScoreboardTag("mcdndproj" + weapon.getDamageRoll());
+        e.getEntity().addScoreboardTag("mcdndprof" + prof);
     }
 
     public void onProjHit(EntityDamageByEntityEvent e) {
@@ -144,21 +139,25 @@ public class CombatManager implements Listener {
 
         applyBadKarma(victim, attacker);
 
-        String cTag = null;
+        String damageTag = null;
+        String profTag = null;
         for (String tag : projectile.getScoreboardTags()) {
             if (tag.startsWith("mcdndproj")) {
-                cTag = tag;
-                break;
+                damageTag = tag;
+            }
+            if (tag.startsWith("mcdndprof")) {
+                profTag = tag;
             }
         }
 
-        if (cTag == null) {
+        if (damageTag == null || profTag == null) {
             return;
         }
 
-        String dice = cTag.replace("mcdndproj", "");
+        String dice = damageTag.replace("mcdndproj", "");
+        int prof = Integer.parseInt(profTag.replace("mcdndprof", ""));
 
-        if (!rollForHit(attacker, victim, true)) {
+        if (!rollForHit(attacker, victim, prof, true)) {
             e.setCancelled(true);
             if (victim instanceof Mob) {
                 Mob mob = (Mob) victim;
@@ -176,27 +175,24 @@ public class CombatManager implements Listener {
         e.setDamage(roll);
     }
 
-    private String getWeaponType(ItemStack item) {
-        boolean isCustom = NbtHandler.itemStackHasTag(item, "customitem", PersistentDataType.STRING);
+    private WeaponProfile getWeaponProfile(ItemStack item) {
+        Main.getInstance().getItemManager().migrateIfVanilla(item);
 
-        if (isCustom) {
-            String type = NbtHandler.itemStackGetTag(item, "customitem", PersistentDataType.STRING);
-            switch (Objects.requireNonNull(type)) {
-                case "melee":
-                case "ranged":
-                    return type;
-
-                default:
-                    return "fist";
-            }
+        String type = NbtHandler.itemStackGetTag(item, "customitem", PersistentDataType.STRING);
+        if (type == null) {
+            type = "fist";
         }
+        boolean ranged = true;
+        switch (type) {
+            case "melee":
+                ranged = false;
+            case "ranged":
+                WeaponType wt = WeaponType.valueOf(NbtHandler.itemStackGetTag(item, "weapontype", PersistentDataType.STRING));
+                return new WeaponProfile(wt, NbtHandler.itemStackGetTag(item, "damageroll", PersistentDataType.STRING), ranged);
 
-        if (item.getType() == Material.BOW) {
-            NbtHandler.itemStackSetTag(item, "customitem", PersistentDataType.STRING, "ranged");
-            NbtHandler.itemStackSetTag(item, "damageroll", PersistentDataType.STRING, "1d6");
+            default:
+                return WeaponProfile.getFist();
         }
-
-        return "fist";
     }
 
     private int getArmorBonus(ItemStack item) {
@@ -209,11 +205,20 @@ public class CombatManager implements Listener {
         return 0;
     }
 
-    private boolean rollForHit(LivingEntity attacker, LivingEntity defender, boolean ranged) {
-        int enemyArmorClass = calculateArmorClass(defender);
-        int attackRollBonus = calculateAttackBonus(attacker, ranged);
+    private boolean rollForHit(LivingEntity attacker, LivingEntity defender, WeaponProfile weapon) {
+        PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(attacker);
+        int profBonus = stats.isProficient(weapon.getType()) ? stats.getProficiencyBonus() : 0;
 
-        int roll = Utils.roll("1d20");
+        return rollForHit(attacker, defender, profBonus, weapon.isRanged());
+    }
+
+    private boolean rollForHit(LivingEntity attacker, LivingEntity defender, int prof, boolean ranged) {
+        int enemyArmorClass = calculateArmorClass(defender);
+        int attackRollBonus = calculateAttackBonus(attacker, prof, ranged);
+
+        int adv = getAdvantage(attacker, defender, ranged);
+
+        int roll = Utils.roll("1d20", adv);
         roll += attackRollBonus;
 
         conditionalSend(attacker, "&oEnemy AC: " + enemyArmorClass + ", Roll Bonus: " + attackRollBonus + ", Roll: " + roll);
@@ -261,13 +266,93 @@ public class CombatManager implements Listener {
         return current + Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.Dexterity);
     }
 
-    private int calculateAttackBonus(LivingEntity e, boolean isRanged) {
-        if (isRanged) {
-            return Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.Dexterity);
+    private int calculateAttackBonus(LivingEntity e, int prof, boolean ranged) {
+        if (ranged) {
+            return Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.Dexterity) + prof;
         }
-        return Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.Strength);
+        return Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.Strength) + prof;
     }
 
+    private int getAdvantage(LivingEntity attacker, LivingEntity defender, boolean ranged) {
+        boolean advantage = hasAdvantage(attacker, defender, ranged);
+        boolean disadvantage = hasDisadvantage(attacker, defender, ranged);
 
+        if (advantage == disadvantage) {
+            return 0;
+        }
+
+        return advantage ? 1 : -1;
+    }
+
+    private boolean hasAdvantage(LivingEntity attacker, LivingEntity defender, boolean ranged) {
+        if (attacker.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+            return true;
+        }
+
+        if (defender.hasPotionEffect(PotionEffectType.BLINDNESS)) {
+            return true;
+        }
+
+        if (defender.hasPotionEffect(PotionEffectType.SLOW)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean hasDisadvantage(LivingEntity attacker, LivingEntity defender, boolean ranged) {
+        if (defender.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+            return true;
+        }
+
+        if (attacker.hasPotionEffect(PotionEffectType.BLINDNESS)) {
+            return true;
+        }
+
+        double distance = attacker.getLocation().distance(defender.getLocation());
+        if (ranged && distance < 5) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public void registerWaitingAction(LivingEntity entity, Action action) {
+        actionsWaitingForTarget.put(entity.getUniqueId(), action);
+    }
+
+    public Action getWaitingAction(LivingEntity entity) {
+        return actionsWaitingForTarget.get(entity.getUniqueId());
+    }
+
+    public void cancelWaitingAction(LivingEntity entity) {
+        actionsWaitingForTarget.remove(entity.getUniqueId());
+    }
+
+    @EventHandler
+    public void onInteract(PlayerInteractEvent e) {
+        Action action = getWaitingAction(e.getPlayer());
+        if (action == null) {
+            return;
+        }
+
+        // Check if they are looking at an entity and get that entity
+        Main.getInstance().getRayCaster().rayCast(e.getPlayer(), new RayCastCallback() {
+            @Override
+            public void run(Entity hitEntity, Block hitBlock, BlockFace hitBlockFace) {
+                Action waitingAction = getWaitingAction(e.getPlayer());
+                cancelWaitingAction(e.getPlayer());
+                if (waitingAction == null || hitEntity == null) {
+                    return;
+                }
+                if (!(hitEntity instanceof LivingEntity)) {
+                    return;
+                }
+                waitingAction.runWithTarget(e.getPlayer(), (LivingEntity) hitEntity);
+            }
+        });
+
+        e.setCancelled(true);
+    }
 
 }

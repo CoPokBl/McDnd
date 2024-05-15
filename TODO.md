@@ -1,3 +1,6 @@
-- Advantages and disadvantages (low/high ground, close range bow)
-- Add spells with wands
 - Dialog
+- Actions menu
+- Refactor conflict manager to not use bukkit entity damage event but instead be called by combat manager so that it can be cancelled
+- Make custom object to pass to conflict manager to give more information
+- Make menu to select class and stats on join
+- Player info saving

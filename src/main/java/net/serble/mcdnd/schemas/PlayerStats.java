@@ -1,5 +1,6 @@
 package net.serble.mcdnd.schemas;
 
+import net.serble.mcdnd.actions.Action;
 import net.serble.mcdnd.classes.DndClass;
 
 import java.util.ArrayList;
@@ -18,9 +19,11 @@ public abstract class PlayerStats {
     protected int constitution;
 
     protected final HashMap<Integer, Integer> spellSlots = new HashMap<>();
-    protected final List<WeaponTypes> weaponProficiencies = new ArrayList<>();
+    protected final HashMap<Integer, Integer> usedSpellSlots = new HashMap<>();
+    protected final List<WeaponType> weaponProficiencies = new ArrayList<>();
     protected final List<Skill> skillProficiencies = new ArrayList<>();
     protected final List<AbilityScore> savingThrowProficiencies = new ArrayList<>();
+    protected final List<Action> actions = new ArrayList<>();
     protected int bonusActions = 1;
     protected int proficiencyBonus = 2;
 
@@ -96,7 +99,7 @@ public abstract class PlayerStats {
         return maxHealth;
     }
 
-    public boolean isProficient(WeaponTypes type) {
+    public boolean isProficient(WeaponType type) {
         return weaponProficiencies.contains(type);
     }
 
@@ -110,5 +113,32 @@ public abstract class PlayerStats {
 
     public int getProficiencyBonus() {
         return proficiencyBonus;
+    }
+
+    public void consumeSpellSlot(int lvl) {
+        if (usedSpellSlots.containsKey(lvl)) {
+            usedSpellSlots.put(lvl, usedSpellSlots.get(lvl) + 1);
+        } else {
+            usedSpellSlots.put(lvl, 1);
+        }
+    }
+
+    public void refillSpellSlots() {
+        usedSpellSlots.clear();
+    }
+
+    public HashMap<Integer, Integer> getRemainingSpellSlots() {
+        HashMap<Integer, Integer> remaining = new HashMap<>();
+        for (int i = 1; i <= 6; i++) {
+            int remainingSlots = spellSlots.getOrDefault(i, 0) - usedSpellSlots.getOrDefault(i, 0);
+            if (remainingSlots > 0) {
+                remaining.put(i, remainingSlots);
+            }
+        }
+        return remaining;
+    }
+
+    public List<Action> getActions() {
+        return actions;
     }
 }

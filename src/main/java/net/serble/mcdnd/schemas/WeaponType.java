@@ -1,13 +1,15 @@
 package net.serble.mcdnd.schemas;
 
-public enum WeaponTypes {
+public enum WeaponType {
     MartialMelee,
     MartialVersatile,
     MartialRanged,
     MartialTwoHandedMelee,
     MartialTwoHandedRanged,
     SimpleMelee,
+    SimpleRanged,
     SimpleVersatile,
     SimpleTwoHandedMelee,
-    SimpleTwoHandedRanged
+    SimpleTwoHandedRanged,
+    Fist
 }

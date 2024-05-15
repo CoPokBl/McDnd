@@ -1,5 +1,7 @@
 package net.serble.mcdnd;
 
+import net.serble.mcdnd.actions.Action;
+import net.serble.mcdnd.actions.spells.FireBolt;
 import net.serble.mcdnd.classes.Rouge;
 import net.serble.mcdnd.mobsheets.CowSheet;
 import net.serble.mcdnd.mobsheets.DefaultSheet;
@@ -39,7 +41,7 @@ public class PlayerManager implements Listener {
     public PlayerManager() {
         Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
             for (Player p : Bukkit.getOnlinePlayers()) {
-                updateScoreboard(p);
+                updatePlayer(p);
             }
         }, 20L, 20L);
     }
@@ -52,6 +54,7 @@ public class PlayerManager implements Listener {
             p.sendMessage(Utils.t("&aWelcome back :)"));
         } else {
             PlayerStats randomStats = new Rouge().randomise();
+            randomStats.setLevel(1);
             playerStats.put(p.getUniqueId(), randomStats);
         }
         updatePlayer(p);
@@ -176,6 +179,9 @@ public class PlayerManager implements Listener {
         }
         if (stack.isSimilar(spells)) {
             // Spells
+            FireBolt bolt = new FireBolt();
+            bolt.use(p);
+            p.sendMessage("Used fire bolt!");
         }
 
         updatePlayer(p);
@@ -215,6 +221,17 @@ public class PlayerManager implements Listener {
         // Disable shields
         p.setCooldown(Material.SHIELD, 999999);
 
+        PlayerStats stats = getStatsFor(p);
+        Utils.setMaxHealth(p, stats.getMaxHealth());
+
+        // Display waiting action
+        Action waitingAction = Main.getInstance().getCombatManager().getWaitingAction(p);
+        if (waitingAction != null) {
+            p.sendTitle("", Utils.t("&9Select a target by left clicking towards them..."), 0, 40, 1);
+        } else {
+            p.sendTitle("", "", 0, 0, 0);
+        }
+
         updateScoreboard(p);
         Inventory inv = p.getInventory();
 
@@ -228,7 +245,6 @@ public class PlayerManager implements Listener {
         inv.setItem(10, spells);
 
         // Stats item
-        PlayerStats stats = getStatsFor(p);
         ItemStack statsItem = Utils.makeItem(Material.EMERALD, "&aCharacter Profile");
         Utils.setLore(statsItem,
                 "&6&l" + stats.getDndClass().getName(),
@@ -284,6 +300,17 @@ public class PlayerManager implements Listener {
         return inv;
     }
 
+    private Inventory createActionsInv(Player p) {
+        Inventory inv = Bukkit.createInventory(null, 9, Utils.t("&aActions"));
+
+        PlayerStats stats = getStatsFor(p);
+        for (Action action : stats.getActions()) {
+
+        }
+
+        return inv;
+    }
+
     public PlayerStats getStatsFor(LivingEntity e) {
         if (playerStats.containsKey(e.getUniqueId())) {
             return playerStats.get(e.getUniqueId());
@@ -330,10 +357,10 @@ public class PlayerManager implements Listener {
         }
 
         if (roll == 20) {  // Nat 20
-            return 999999;
+            return Integer.MAX_VALUE;
         }
         if (roll == 1) {  // Nat 1
-            return -99999;
+            return Integer.MIN_VALUE;
         }
 
         return roll + mod;

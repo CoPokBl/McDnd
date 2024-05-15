@@ -14,6 +14,7 @@ public final class Main extends JavaPlugin {
     private CombatManager combat;
     private EnvironmentManager environment;
     private CustomItemManager items;
+    private RayCaster rayCaster;
 
     @Override
     public void onEnable() {
@@ -26,12 +27,14 @@ public final class Main extends JavaPlugin {
         combat = new CombatManager();
         environment = new EnvironmentManager();
         items = new CustomItemManager();
+        rayCaster = new RayCaster();
 
         Bukkit.getPluginManager().registerEvents(conflict, this);
         Bukkit.getPluginManager().registerEvents(players, this);
         Bukkit.getPluginManager().registerEvents(combat, this);
         Bukkit.getPluginManager().registerEvents(environment, this);
         Bukkit.getPluginManager().registerEvents(items, this);
+        Bukkit.getPluginManager().registerEvents(rayCaster, this);
 
         Objects.requireNonNull(getCommand("dnd")).setExecutor(new DndCommand());
 
@@ -72,6 +75,10 @@ public final class Main extends JavaPlugin {
 
     public CustomItemManager getItemManager() {
         return items;
+    }
+
+    public RayCaster getRayCaster() {
+        return rayCaster;
     }
 
 }
