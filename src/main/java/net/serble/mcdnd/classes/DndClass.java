@@ -2,7 +2,7 @@ package net.serble.mcdnd.classes;
 
 public enum DndClass {
     DEFAULT("Default"),
-    ROUGE("Rouge");
+    ROGUE("Rogue");
 
     private final String name;
 

@@ -2,17 +2,17 @@ package net.serble.mcdnd.schemas;
 
 public class WeaponProfile {
     private final WeaponType type;
-    private final String damageRoll;
+    private final Damage damage;
     private final boolean isRanged;
 
-    public WeaponProfile(WeaponType t, String dr, boolean ranged) {
+    public WeaponProfile(WeaponType t, Damage dr, boolean ranged) {
         type = t;
-        damageRoll = dr;
+        damage = dr;
         isRanged = ranged;
     }
 
-    public String getDamageRoll() {
-        return damageRoll;
+    public Damage getDamage() {
+        return damage;
     }
 
     public WeaponType getType() {
@@ -24,6 +24,6 @@ public class WeaponProfile {
     }
 
     public static WeaponProfile getFist() {
-        return new WeaponProfile(WeaponType.Fist, "1d4", false);
+        return new WeaponProfile(WeaponType.Fist, new Damage(DamageType.Bludgeoning, "1d4"), false);
     }
 }

@@ -2,6 +2,7 @@ package net.serble.mcdnd.actions.spells;
 
 import net.serble.mcdnd.Utils;
 import net.serble.mcdnd.actions.SpellBase;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
 
@@ -15,6 +16,16 @@ public class FireBolt extends SpellBase {
     @Override
     public boolean canUse(LivingEntity e) {
         return true;
+    }
+
+    @Override
+    public Material getIcon() {
+        return Material.FIRE;
+    }
+
+    @Override
+    public String getName() {
+        return "Fire Bolt";
     }
 
     @Override

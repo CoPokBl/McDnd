@@ -82,7 +82,7 @@ public class CustomItemManager implements Listener {
 
         int swordType = getSwordType(item);
         if (swordType != 0) {
-            String roll = swordType + "d4";
+            String roll = "sl" + swordType + "d4";
             NbtHandler.itemStackSetTag(item, "customitem", PersistentDataType.STRING, "melee");
             NbtHandler.itemStackSetTag(item, "damageroll", PersistentDataType.STRING, roll);
             NbtHandler.itemStackSetTag(item, "weapontype", PersistentDataType.STRING, "SimpleMelee");
@@ -104,7 +104,7 @@ public class CustomItemManager implements Listener {
 
         int rangedType = getRangedWeaponType(item);
         if (rangedType != 0) {
-            String roll = "1d" + (4 + (rangedType*2));
+            String roll = "pi1d" + (4 + (rangedType*2));
             NbtHandler.itemStackSetTag(item, "customitem", PersistentDataType.STRING, "ranged");
             NbtHandler.itemStackSetTag(item, "damageroll", PersistentDataType.STRING, roll);
             NbtHandler.itemStackSetTag(item, "weapontype", PersistentDataType.STRING, "SimpleRanged");

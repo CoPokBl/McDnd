@@ -161,7 +161,7 @@ public class CombatManager implements Listener {
         PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(entity);
         int prof = stats.isProficient(weapon.getType()) ? stats.getProficiencyBonus() : 0;
 
-        e.getEntity().addScoreboardTag("mcdndproj" + weapon.getDamageRoll());
+        e.getEntity().addScoreboardTag("mcdndproj" + weapon.getDamage());
         e.getEntity().addScoreboardTag("mcdndprof" + prof);
     }
 
@@ -240,7 +240,10 @@ public class CombatManager implements Listener {
                 ranged = false;
             case "ranged":
                 WeaponType wt = WeaponType.valueOf(NbtHandler.itemStackGetTag(item, "weapontype", PersistentDataType.STRING));
-                return new WeaponProfile(wt, NbtHandler.itemStackGetTag(item, "damageroll", PersistentDataType.STRING), ranged);
+                String dmgStr = NbtHandler.itemStackGetTag(item, "damageroll", PersistentDataType.STRING);
+                assert dmgStr != null;
+                Damage dmg = Utils.parseDamage(dmgStr);
+                return new WeaponProfile(wt, dmg, ranged);
 
             default:
                 return WeaponProfile.getFist();

@@ -3,7 +3,7 @@ package net.serble.mcdnd.commands;
 import net.serble.mcdnd.Main;
 import net.serble.mcdnd.Utils;
 import net.serble.mcdnd.ai.SpeedyZombie;
-import net.serble.mcdnd.classes.Rouge;
+import net.serble.mcdnd.classes.Rogue;
 import net.serble.mcdnd.schemas.PlayerStats;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -46,7 +46,7 @@ public class DndCommand implements CommandExecutor {
         }
 
         if (Objects.equals(args[0], "isrouge")) {
-            s(p, "Is rouge: " + (Main.getInstance().getPlayerManager().getStatsFor(p) instanceof Rouge));
+            s(p, "Is rouge: " + (Main.getInstance().getPlayerManager().getStatsFor(p) instanceof Rogue));
             return true;
         }
 

@@ -1,10 +1,10 @@
 package net.serble.mcdnd;
 
 import net.serble.mcdnd.ai.*;
-import net.serble.mcdnd.schemas.AbilityScore;
-import net.serble.mcdnd.schemas.Conflict;
+import net.serble.mcdnd.schemas.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
@@ -27,6 +27,11 @@ public class EnvironmentManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onDamage(EntityDamageEvent e) {
+        //noinspection UnstableApiUsage
+        if (e.getDamageSource() instanceof ProcessedDamageSource) {
+            return;  // We have already processed it, return
+        }
+
         if (!(e.getEntity() instanceof LivingEntity)) {
             return;
         }
@@ -38,7 +43,7 @@ public class EnvironmentManager implements Listener {
             case ENTITY_EXPLOSION:
                 boolean saved = Main.getInstance().getPlayerManager().savingThrow(entity, AbilityScore.Dexterity, 15);
                 if (saved) {
-                    e.setDamage(e.getDamage() / 2);
+                    recastDamage(e, new Damage(DamageType.Fire, "1d10"));
                     entity.sendMessage(Utils.t("&aYou successfully saved against explosion"));
                 }
                 break;
@@ -47,7 +52,7 @@ public class EnvironmentManager implements Listener {
             case FIRE:
             case WITHER:
             case POISON:
-                e.setCancelled(true);
+                e.setCancelled(true);  // Status effects are handled manually
                 break;
 
         }
@@ -78,20 +83,17 @@ public class EnvironmentManager implements Listener {
 
     public void applyEnvironmentalDamages(LivingEntity entity) {
         if (entity.hasPotionEffect(PotionEffectType.POISON)) {
-            int damage = Utils.roll("1d4");
-            entity.damage(damage);
+            damage(entity, new Damage(DamageType.Poison, "1d4"));
             trySave(entity, PotionEffectType.POISON, AbilityScore.Constitution, 15);
         }
 
         if (entity.hasPotionEffect(PotionEffectType.WITHER)) {
-            int damage = Utils.roll("1d6");
-            entity.damage(damage);
+            damage(entity, new Damage(DamageType.Necrotic, "1d6"));
             trySave(entity, PotionEffectType.WITHER, AbilityScore.Constitution, 17);
         }
 
         if (entity.getFireTicks() > 0) {
-            int damage = Utils.roll("1d6");
-            entity.damage(damage);
+            damage(entity, new Damage(DamageType.Fire, "1d6"));
             if (Main.getInstance().getPlayerManager().savingThrow(entity, AbilityScore.Constitution, 10)) {
                 entity.setFireTicks(0);
                 entity.sendMessage(Utils.t("&7You passed check and lost fire"));
@@ -192,4 +194,37 @@ public class EnvironmentManager implements Listener {
         Main.getInstance().getConflictManager().onDeath(deathEvent);
     }
 
+    @SuppressWarnings("UnstableApiUsage")
+    public Tuple<DamageType, Integer>[] damage(DamageSource source, LivingEntity target, Damage damage) {
+        Tuple<Integer, Tuple<DamageType, Integer>[]> dmgInfo = getDamageAmount(source, target, damage);
+        ProcessedDamageSource processedDamageSource = new ProcessedDamageSource(source);
+        target.damage(dmgInfo.a(), processedDamageSource);
+        return dmgInfo.b();
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    public Tuple<Integer, Tuple<DamageType, Integer>[]> getDamageAmount(DamageSource source, LivingEntity target, Damage damage) {
+        int totalDmg = 0;
+        @SuppressWarnings("unchecked")  // Please just believe me
+        Tuple<DamageType, Integer>[] appliedDamage = new Tuple[damage.getDamages().length];
+        int cDmgIndex = 0;
+        for (Tuple<DamageType, String> dmg : damage.getDamages()) {
+            int roll = Utils.roll(dmg.b());
+            totalDmg += roll;
+            appliedDamage[cDmgIndex] = new Tuple<>(dmg.a(), roll);
+            cDmgIndex++;
+        }
+        return new Tuple<>(totalDmg, appliedDamage);
+    }
+
+    public void damage(LivingEntity target, Damage damage) {
+        damage(null, target, damage);
+    }
+
+    public void recastDamage(EntityDamageEvent e, Damage newDmg) {
+        e.setCancelled(true);
+        LivingEntity entity = (LivingEntity) e.getEntity();
+        //noinspection UnstableApiUsage
+        damage(e.getDamageSource(), entity, newDmg);
+    }
 }

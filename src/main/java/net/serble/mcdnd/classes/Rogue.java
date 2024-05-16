@@ -6,14 +6,14 @@ import net.serble.mcdnd.schemas.AbilityScore;
 import net.serble.mcdnd.schemas.PlayerStats;
 import org.bukkit.Bukkit;
 
-public class Rouge extends PlayerStats {
+public class Rogue extends PlayerStats {
 
     @Override
     public DndClass getDndClass() {
-        return DndClass.ROUGE;
+        return DndClass.ROGUE;
     }
 
-    public Rouge(int dex, int cha, int str, int inte, int wis, int con) {
+    public Rogue(int dex, int cha, int str, int inte, int wis, int con) {
         setDexterity(dex);
         setCharisma(cha);
         setStrength(str);
@@ -22,7 +22,7 @@ public class Rouge extends PlayerStats {
         setConstitution(con);
     }
 
-    public Rouge() {
+    public Rogue() {
         setLevel(1);
     }
 
@@ -41,6 +41,7 @@ public class Rouge extends PlayerStats {
                 Bukkit.getLogger().info("Max Health: " + maxHealth + ", const mod: " + Utils.getStatMod(constitution) + ", const: " + constitution);
                 break;
 
+            default:
             case 12:
             case 10:
             case 11:
@@ -76,6 +77,7 @@ public class Rouge extends PlayerStats {
             case 10:
             case 11:
             case 12:
+            default:
                 proficiencyBonus = 4;
                 break;
         }

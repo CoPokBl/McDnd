@@ -4,6 +4,8 @@ import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.serble.mcdnd.schemas.Combatant;
+import net.serble.mcdnd.schemas.Damage;
+import net.serble.mcdnd.schemas.DamageType;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -212,5 +214,40 @@ public class Utils {
             }
         }, 0, 1);
         runningTask.set(task);
+    }
+
+    public static String fromPascal(String pascalName) {
+        List<String> words = new ArrayList<>();
+        StringBuilder cWord = new StringBuilder();
+        for (char c : pascalName.toCharArray()) {
+            if (Character.isUpperCase(c) && !cWord.toString().isEmpty()) {
+                words.add(cWord.toString());
+                cWord = new StringBuilder();
+            }
+            cWord.append(c);
+        }
+
+        if (!cWord.toString().isEmpty()) {
+            words.add(cWord.toString());
+        }
+
+        StringBuilder finalText = new StringBuilder();
+        for (String word : words) {
+            finalText.append(word).append(" ");
+        }
+
+        finalText.deleteCharAt(finalText.length()-1);
+        return finalText.toString();
+    }
+
+    public static Damage parseDamage(String dmgStr) {
+        String[] damages = dmgStr.split(",");
+        List<Tuple<DamageType, String>> dmgs = new ArrayList<>();
+        for (String dmg : damages) {
+            String typeStr = dmg.substring(0, 2);
+            DamageType type = DamageType.getFromPrefix(typeStr);
+            dmgs.add(new Tuple<>(type, dmg.substring(2)));
+        }
+        return new Damage(dmgs);
     }
 }

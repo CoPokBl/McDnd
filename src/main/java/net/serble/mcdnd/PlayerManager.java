@@ -2,7 +2,7 @@ package net.serble.mcdnd;
 
 import net.serble.mcdnd.actions.Action;
 import net.serble.mcdnd.actions.spells.FireBolt;
-import net.serble.mcdnd.classes.Rouge;
+import net.serble.mcdnd.classes.Rogue;
 import net.serble.mcdnd.mobsheets.CowSheet;
 import net.serble.mcdnd.mobsheets.DefaultSheet;
 import net.serble.mcdnd.schemas.*;
@@ -53,7 +53,7 @@ public class PlayerManager implements Listener {
         if (playerStats.containsKey(p.getUniqueId())) {
             p.sendMessage(Utils.t("&aWelcome back :)"));
         } else {
-            PlayerStats randomStats = new Rouge().randomise();
+            PlayerStats randomStats = new Rogue().randomise();
             randomStats.setLevel(1);
             playerStats.put(p.getUniqueId(), randomStats);
         }
@@ -305,7 +305,7 @@ public class PlayerManager implements Listener {
 
         PlayerStats stats = getStatsFor(p);
         for (Action action : stats.getActions()) {
-
+            ItemStack actionItem = Utils.makeItem(action.getIcon(), action.getName());
         }
 
         return inv;
