@@ -10,6 +10,7 @@ public abstract class Action {
     public abstract boolean canUse(LivingEntity e);
     public abstract Material getIcon();
     public abstract String getName();
+    public abstract String[] getDescription();
 
     protected void waitForTarget(LivingEntity e) {
         Main.getInstance().getCombatManager().registerWaitingAction(e, this);

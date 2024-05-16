@@ -127,13 +127,13 @@ public class ConflictManager implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onAttack(AttackEvent e) {
         if (e.isRanged()) {
-            if (processHit(e.getAttacker(), e.getDefender(), e.getDamage(), e.isCancelled(), e.getProjectile() instanceof ThrownPotion, true)) {
+            if (processHit(e.getAttacker(), e.getDefender(), e.getDamage(), !e.didHit(), e.getProjectile() instanceof ThrownPotion, true)) {
                 e.setCancelled(true);
             }
             return;
         }
 
-        if (processHit(e.getAttacker(), e.getDefender(), e.getDamage(), e.isCancelled(), false, true)) {
+        if (processHit(e.getAttacker(), e.getDefender(), e.getDamage(), !e.didHit(), false, true)) {
             e.setCancelled(true);
         }
     }

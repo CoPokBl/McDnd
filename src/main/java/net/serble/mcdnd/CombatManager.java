@@ -9,6 +9,8 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -88,14 +90,14 @@ public class CombatManager implements Listener {
         }
 
         if (!miss) {
-            int roll = Utils.roll(weapon.getDamageRoll());
+            int roll = rollDamage(damager, damagee, weapon.getDamage());
             String rollMsg = hitResult.isCritical() ? roll * 2 + " (Critical Hit)" : String.valueOf(roll);
             if (hitResult.isCritical()) {
                 roll *= 2;
             }
             e.setDamage(roll);
             if (damager instanceof Player) {
-                conditionalSend(damager, "&aRolled &6" + weapon.getDamageRoll() + "&a and dealt &6" + rollMsg + "&a damage");
+                conditionalSend(damager, "&aRolled &6" + weapon.getDamage().getDamageString() + "&a and dealt &6" + rollMsg + "&a damage");
             }
         }
 
@@ -109,6 +111,12 @@ public class CombatManager implements Listener {
         if (event.isCancelled()) {
             e.setCancelled(true);
         }
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    private int rollDamage(LivingEntity attacker, LivingEntity defender, Damage d) {
+        DamageSource source = DamageSource.builder(DamageType.PLAYER_ATTACK).withDirectEntity(attacker).build();
+        return Main.getInstance().getEnvironmentManager().getDamageAmount(source, defender, d).a();
     }
 
     private void applyBadKarma(LivingEntity e1, LivingEntity e2) {

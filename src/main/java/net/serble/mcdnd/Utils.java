@@ -248,6 +248,8 @@ public class Utils {
             DamageType type = DamageType.getFromPrefix(typeStr);
             dmgs.add(new Tuple<>(type, dmg.substring(2)));
         }
-        return new Damage(dmgs);
+        Damage dmg = new Damage(dmgs);
+        dmg.setDamageString(dmgStr);
+        return dmg;
     }
 }

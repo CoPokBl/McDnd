@@ -141,4 +141,8 @@ public abstract class PlayerStats {
     public List<Action> getActions() {
         return actions;
     }
+
+    public int getLevel() {
+        return level;
+    }
 }

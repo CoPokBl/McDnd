@@ -4,7 +4,6 @@ import net.serble.mcdnd.Utils;
 import net.serble.mcdnd.actions.spells.FireBolt;
 import net.serble.mcdnd.schemas.AbilityScore;
 import net.serble.mcdnd.schemas.PlayerStats;
-import org.bukkit.Bukkit;
 
 public class Rogue extends PlayerStats {
 
@@ -31,6 +30,9 @@ public class Rogue extends PlayerStats {
         level = lvl;
         savingThrowProficiencies.clear();
         weaponProficiencies.clear();
+        actions.clear();
+
+        actions.add(new FireBolt());
 
         savingThrowProficiencies.add(AbilityScore.Dexterity);
         savingThrowProficiencies.add(AbilityScore.Intelligence);
@@ -38,7 +40,6 @@ public class Rogue extends PlayerStats {
         switch (lvl) {
             case 1:
                 maxHealth = 8 + Utils.getStatMod(constitution);
-                Bukkit.getLogger().info("Max Health: " + maxHealth + ", const mod: " + Utils.getStatMod(constitution) + ", const: " + constitution);
                 break;
 
             default:
@@ -60,7 +61,6 @@ public class Rogue extends PlayerStats {
         switch (lvl) {
             case 1:
             case 2:
-                actions.add(new FireBolt());
             case 3:
             case 4:
                 proficiencyBonus = 2;

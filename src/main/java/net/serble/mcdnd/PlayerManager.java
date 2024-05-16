@@ -1,7 +1,6 @@
 package net.serble.mcdnd;
 
 import net.serble.mcdnd.actions.Action;
-import net.serble.mcdnd.actions.spells.FireBolt;
 import net.serble.mcdnd.classes.Rogue;
 import net.serble.mcdnd.mobsheets.CowSheet;
 import net.serble.mcdnd.mobsheets.DefaultSheet;
@@ -19,13 +18,14 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scoreboard.*;
 
 import java.util.*;
 
 public class PlayerManager implements Listener {
     private final HashMap<UUID, PlayerStats> playerStats = new HashMap<>();
-    private final HashMap<UUID, Inventory> openInvs = new HashMap<>();
+    private final HashMap<UUID, Tuple<PlayerCustomInventory, Inventory>> openInvs = new HashMap<>();
 
     // Inv items
     private final ItemStack emptySlotCombat = Utils.makeItem(Material.RED_STAINED_GLASS_PANE, "&c");
@@ -68,32 +68,67 @@ public class PlayerManager implements Listener {
 
         Player p = (Player) e.getWhoClicked();
 
-        if (e.getClickedInventory() == openInvs.get(p.getUniqueId())) {
-            e.setCancelled(true);
-            ItemStack clicked = e.getCurrentItem();
-            if (clicked == null) {
-                return;
-            }
-            String playerName = ChatColor.stripColor(Objects.requireNonNull(clicked.getItemMeta()).getDisplayName());
-            Player other = Bukkit.getPlayer(playerName);
-            if (other == null) {
-                p.sendMessage(Utils.t("&cThat player doesn't exist"));
-                return;
-            }
-            if (e.isLeftClick()) {  // Join team
-                if (!Main.getInstance().getTeamManager().isInvited(other, p)) {
-                    p.sendMessage(Utils.t("&cYou are not invited"));
+        Tuple<PlayerCustomInventory, Inventory> openInv = openInvs.get(p.getUniqueId());
+
+        if (openInv != null && openInv.b() == e.getClickedInventory()) {
+            if (openInv.a() == PlayerCustomInventory.Teams) {
+                e.setCancelled(true);
+                ItemStack clicked = e.getCurrentItem();
+                if (clicked == null) {
                     return;
                 }
-                Main.getInstance().getTeamManager().addPlayerToTeam(other, p);
-                other.sendMessage(Utils.t("&6" + p.getName() + "&a joined your team!"));
-                p.sendMessage(Utils.t("&aYou joined &6" + playerName + "'s&a team!"));
-            } else if (e.isRightClick()) {  // Invite to team
-                Main.getInstance().getTeamManager().setPlayersInvite(p, other);
-                p.sendMessage(Utils.t("&aInvited &6" + playerName + "&a to your team"));
-                other.sendMessage(Utils.t("&aYou were invited to join &6" + p.getName() + "'s&a team"));
+                String playerName = ChatColor.stripColor(Objects.requireNonNull(clicked.getItemMeta()).getDisplayName());
+                Player other = Bukkit.getPlayer(playerName);
+                if (other == null) {
+                    p.sendMessage(Utils.t("&cThat player doesn't exist"));
+                    return;
+                }
+                if (e.isLeftClick()) {  // Join team
+                    if (!Main.getInstance().getTeamManager().isInvited(other, p)) {
+                        p.sendMessage(Utils.t("&cYou are not invited"));
+                        return;
+                    }
+                    Main.getInstance().getTeamManager().addPlayerToTeam(other, p);
+                    other.sendMessage(Utils.t("&6" + p.getName() + "&a joined your team!"));
+                    p.sendMessage(Utils.t("&aYou joined &6" + playerName + "'s&a team!"));
+                } else if (e.isRightClick()) {  // Invite to team
+                    Main.getInstance().getTeamManager().setPlayersInvite(p, other);
+                    p.sendMessage(Utils.t("&aInvited &6" + playerName + "&a to your team"));
+                    other.sendMessage(Utils.t("&aYou were invited to join &6" + p.getName() + "'s&a team"));
+                }
+                return;
             }
-            return;
+
+            if (openInv.a() == PlayerCustomInventory.Actions) {
+                e.setCancelled(true);
+                ItemStack clicked = e.getCurrentItem();
+                if (clicked == null) {
+                    return;
+                }
+
+                String actionName = NbtHandler.itemStackGetTag(clicked, "action", PersistentDataType.STRING);
+                if (actionName == null) {
+                    return;
+                }
+
+                PlayerStats stats = getStatsFor(p);
+                for (Action action : stats.getActions()) {
+                    if (!Objects.equals(action.getName(), actionName)) {
+                        continue;
+                    }
+
+                    if (!action.canUse(p)) {
+                        p.sendMessage(Utils.t("&cYou cannot use this right now"));
+                        return;
+                    }
+
+                    action.use(p);
+                    p.closeInventory();
+                    return;
+                }
+
+                return;
+            }
         }
 
         if (e.getClickedInventory() == null) {
@@ -136,7 +171,7 @@ public class PlayerManager implements Listener {
         }
         if (stack.isSimilar(friendsMenu)) {
             Inventory inv = createTeamInv(p);
-            openInvs.put(p.getUniqueId(), inv);
+            openInvs.put(p.getUniqueId(), new Tuple<>(PlayerCustomInventory.Teams, inv));
             p.openInventory(inv);
         }
         if (stack.isSimilar(beFriends) && inConflict) {
@@ -179,9 +214,9 @@ public class PlayerManager implements Listener {
         }
         if (stack.isSimilar(spells)) {
             // Spells
-            FireBolt bolt = new FireBolt();
-            bolt.use(p);
-            p.sendMessage("Used fire bolt!");
+            Inventory inv = createActionsInv(p);
+            p.openInventory(inv);
+            openInvs.put(p.getUniqueId(), new Tuple<>(PlayerCustomInventory.Actions, inv));
         }
 
         updatePlayer(p);
@@ -227,7 +262,7 @@ public class PlayerManager implements Listener {
         // Display waiting action
         Action waitingAction = Main.getInstance().getCombatManager().getWaitingAction(p);
         if (waitingAction != null) {
-            p.sendTitle("", Utils.t("&9Select a target by left clicking towards them..."), 0, 40, 1);
+            p.sendTitle("", Utils.t("&9Select a target by clicking them..."), 0, 40, 1);
         } else {
             p.sendTitle("", "", 0, 0, 0);
         }
@@ -304,10 +339,14 @@ public class PlayerManager implements Listener {
         Inventory inv = Bukkit.createInventory(null, 9, Utils.t("&aActions"));
 
         PlayerStats stats = getStatsFor(p);
-        for (Action action : stats.getActions()) {
-            ItemStack actionItem = Utils.makeItem(action.getIcon(), action.getName());
+        List<Action> actions = stats.getActions();
+        for (int i = 0; i < actions.size(); i++) {
+            Action action = actions.get(i);
+            ItemStack actionItem = Utils.makeItem(action.getIcon(), "&f" + action.getName());
+            NbtHandler.itemStackSetTag(actionItem, "action", PersistentDataType.STRING, action.getName());
+            Utils.setLore(actionItem, action.getDescription());
+            inv.setItem(i, actionItem);
         }
-
         return inv;
     }
 

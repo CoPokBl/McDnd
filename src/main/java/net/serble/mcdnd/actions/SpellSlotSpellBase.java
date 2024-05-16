@@ -9,7 +9,7 @@ public abstract class SpellSlotSpellBase extends SpellBase {
     protected abstract void cast(LivingEntity e);
 
     @Override
-    public void use(LivingEntity e) {
+    public void runWithTarget(LivingEntity e, LivingEntity target) {
         PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(e);
         stats.consumeSpellSlot(getSpellSlotLevel());
         cast(e);

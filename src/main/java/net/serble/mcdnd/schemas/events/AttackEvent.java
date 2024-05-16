@@ -16,10 +16,15 @@ public class AttackEvent extends Event implements Cancellable {
     private double damage;
     private boolean cancelled;
     private final boolean ranged;
+    private static final HandlerList handlers = new HandlerList();
 
     @Override
     public HandlerList getHandlers() {
-        return new HandlerList();
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 
     public AttackEvent(LivingEntity a, LivingEntity d, boolean hit, double dmg, boolean ranged, Projectile proj) {

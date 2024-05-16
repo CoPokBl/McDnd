@@ -198,7 +198,7 @@ public class EnvironmentManager implements Listener {
     public Tuple<DamageType, Integer>[] damage(DamageSource source, LivingEntity target, Damage damage) {
         Tuple<Integer, Tuple<DamageType, Integer>[]> dmgInfo = getDamageAmount(source, target, damage);
         ProcessedDamageSource processedDamageSource = new ProcessedDamageSource(source);
-        target.damage(dmgInfo.a(), processedDamageSource);
+        target.damage(dmgInfo.a(), processedDamageSource);  // TODO: class net.serble.mcdnd.schemas.ProcessedDamageSource cannot be cast to class org.bukkit.craftbukkit.v1_20_R3.damage.CraftDamageSource
         return dmgInfo.b();
     }
 

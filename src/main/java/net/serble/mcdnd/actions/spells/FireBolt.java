@@ -20,16 +20,25 @@ public class FireBolt extends SpellBase {
 
     @Override
     public Material getIcon() {
-        return Material.FIRE;
+        return Material.FIRE_CHARGE;
     }
 
     @Override
     public String getName() {
-        return "Fire Bolt";
+        return "&6Fire Bolt";
+    }
+
+    @Override
+    public String[] getDescription() {
+        return new String[] {
+                "&7Shoot a ball of fire at a target.",
+                "&71d10 &6Fire Damage"
+        };
     }
 
     @Override
     public void runWithTarget(LivingEntity e, LivingEntity target) {
+        super.runWithTarget(e, target);
         Utils.particleStream(e.getLocation().add(0, 1, 0), target.getLocation().add(0, 1, 0), Particle.FLAME, 20);
         target.damage(Utils.roll("1d10"), e);
         target.setFireTicks(100);

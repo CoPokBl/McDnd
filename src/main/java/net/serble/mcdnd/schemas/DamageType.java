@@ -47,6 +47,6 @@ public enum DamageType {
                 return Psychic;
         }
 
-        throw new RuntimeException("Invalid damage type");
+        throw new RuntimeException("Invalid damage type: " + pre);
     }
 }

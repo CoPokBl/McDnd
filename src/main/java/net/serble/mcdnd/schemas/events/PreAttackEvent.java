@@ -14,10 +14,15 @@ public class PreAttackEvent extends Event implements Cancellable {
     private final Projectile projectile;
     private boolean cancelled;
     private final boolean ranged;
+    private static final HandlerList handlers = new HandlerList();
 
     @Override
     public HandlerList getHandlers() {
-        return new HandlerList();
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 
     public PreAttackEvent(LivingEntity a, LivingEntity d, boolean ranged, Projectile proj) {
