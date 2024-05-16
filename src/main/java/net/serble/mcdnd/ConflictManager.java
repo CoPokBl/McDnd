@@ -1,8 +1,10 @@
 package net.serble.mcdnd;
 
 import net.serble.mcdnd.schemas.AbilityScore;
+import net.serble.mcdnd.schemas.events.AttackEvent;
 import net.serble.mcdnd.schemas.Combatant;
 import net.serble.mcdnd.schemas.Conflict;
+import net.serble.mcdnd.schemas.events.PreAttackEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -10,7 +12,6 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -110,48 +111,36 @@ public class ConflictManager implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGH)
-    public void onDamage(EntityDamageByEntityEvent e) {
-        if (e.getDamager() instanceof Projectile && e.getEntity() instanceof LivingEntity) {
-            onProjHit(e);
-            return;
-        }
-
-        if (!(e.getDamager() instanceof LivingEntity) || !(e.getEntity() instanceof LivingEntity)) {
-            return;
-        }
-
-        LivingEntity aggressor = (LivingEntity) e.getDamager();
-        LivingEntity defender = (LivingEntity) e.getEntity();
-
-        if (processHit(aggressor, defender, e.getDamage(), e.isCancelled(), false)) {
-            e.setCancelled(true);
-        }
-    }
-
-    private void onProjHit(EntityDamageByEntityEvent e) {
-        LivingEntity target = (LivingEntity) e.getEntity();
-        Projectile damager = (Projectile) e.getDamager();
-
-        String cTag = null;
-        for (String tag : damager.getScoreboardTags()) {
-            if (tag.startsWith("mcdndproj")) {
-                cTag = tag;
-                break;
+    public void preAttack(PreAttackEvent e) {
+        if (e.isRanged()) {
+            if (processHit(e.getAttacker(), e.getDefender(), 0, false, e.getProjectile() instanceof ThrownPotion, false)) {
+                e.setCancelled(true);
             }
-        }
-
-        if (cTag == null) {
             return;
         }
 
-        LivingEntity aggressor = (LivingEntity) damager.getShooter();
-
-        if (processHit(aggressor, target, e.getDamage(), e.isCancelled(), damager instanceof ThrownPotion)) {
+        if (processHit(e.getAttacker(), e.getDefender(), 0, false, false, false)) {
             e.setCancelled(true);
         }
     }
 
-    private boolean processHit(LivingEntity aggressor, LivingEntity defender, double damage, boolean missed, boolean isFree) {
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onAttack(AttackEvent e) {
+        if (e.isRanged()) {
+            if (processHit(e.getAttacker(), e.getDefender(), e.getDamage(), e.isCancelled(), e.getProjectile() instanceof ThrownPotion, true)) {
+                e.setCancelled(true);
+            }
+            return;
+        }
+
+        if (processHit(e.getAttacker(), e.getDefender(), e.getDamage(), e.isCancelled(), false, true)) {
+            e.setCancelled(true);
+        }
+    }
+
+    // Returns true if the attack is not allowed and should be cancelled
+    // Act is whether the attack is actually being made, set to false if you just want to see whether it is allowed to happen
+    private boolean processHit(LivingEntity aggressor, LivingEntity defender, double damage, boolean missed, boolean isFree, boolean act) {
         boolean aInCombat = isInCombat(aggressor);
         boolean dInCombat = isInCombat(defender);
 
@@ -161,6 +150,11 @@ public class ConflictManager implements Listener {
                 aggressor.sendMessage(Utils.t("&cIt is not your turn"));
                 return true;
             }
+
+            if (!act) {
+                return false;
+            }
+
             LivingEntity newComer = aInCombat ? defender : aggressor;
             Conflict conflict = getConflict(fighter);
 
@@ -168,7 +162,7 @@ public class ConflictManager implements Listener {
             conflict.setTurns(Utils.addCombatant(conflict.getTurns(), new Combatant(newComer)));
             conflict.updateParticipants();
             newComer.setAI(false);
-            return true;
+            return false;
         }
 
         Conflict conflict = getConflict(aggressor);
@@ -185,6 +179,10 @@ public class ConflictManager implements Listener {
 
             Integer relation = Main.getInstance().getTeamManager().getRelationship(aggressor, defender);
             if (relation == 1) {  // Allies can't fight each other, but they can friendly fire
+                return false;
+            }
+
+            if (!act) {
                 return false;
             }
 
@@ -205,6 +203,11 @@ public class ConflictManager implements Listener {
         if (conflict.currentTurnActionsRemaining < 1 && !isFree) {
             aggressor.sendMessage(Utils.t("&cYou have no actions remaining"));
             return true;
+        }
+
+        // The attack can happen
+        if (!act) {  // But not yet
+            return false;
         }
 
         // Damage success

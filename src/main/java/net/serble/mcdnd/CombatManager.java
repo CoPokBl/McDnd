@@ -2,6 +2,9 @@ package net.serble.mcdnd;
 
 import net.serble.mcdnd.actions.Action;
 import net.serble.mcdnd.schemas.*;
+import net.serble.mcdnd.schemas.events.AttackEvent;
+import net.serble.mcdnd.schemas.events.PreAttackEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
@@ -39,6 +42,10 @@ public class CombatManager implements Listener {
             return;  // Not a melee attack
         }
 
+        if (e.getDamager() instanceof LivingEntity && getWaitingAction((LivingEntity) e.getDamager()) != null) {
+            return;
+        }
+
         if (e.getDamager() instanceof Projectile && e.getEntity() instanceof LivingEntity) {
             onProjHit(e);
             return;
@@ -51,6 +58,13 @@ public class CombatManager implements Listener {
         LivingEntity damager = (LivingEntity) e.getDamager();
         LivingEntity damagee = (LivingEntity) e.getEntity();
 
+        PreAttackEvent preAttackEvent = new PreAttackEvent(damager, damagee, false, null);
+        Bukkit.getPluginManager().callEvent(preAttackEvent);
+        if (preAttackEvent.isCancelled()) {
+            e.setCancelled(true);
+            return;
+        }
+
         applyBadKarma(damagee, damager);
 
         ItemStack heldItem = Objects.requireNonNull(damager.getEquipment()).getItemInMainHand();
@@ -60,21 +74,40 @@ public class CombatManager implements Listener {
             weapon = WeaponProfile.getFist();
         }
 
-        if (!rollForHit(damager, damagee, weapon)) {
+        boolean miss = false;
+        HitResult hitResult = rollForHit(damager, damagee, weapon);
+        if (!hitResult.isSuccessfulHit()) {
             e.setCancelled(true);
+            miss = true;
             if (damagee instanceof Mob) {
                 Mob mob = (Mob) damagee;
                 mob.setTarget(damager);
             }
             Utils.playSound(Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, damager, damagee);
             conditionalSend(damager, "&cYou missed!");
-            return;
         }
 
-        int roll = Utils.roll(weapon.getDamageRoll());
-        e.setDamage(roll);
-        if (damager instanceof Player) {
-            conditionalSend(damager, "&aRolled &6" + roll + "&a and dealt &6" + roll + "&a damage");
+        if (!miss) {
+            int roll = Utils.roll(weapon.getDamageRoll());
+            String rollMsg = hitResult.isCritical() ? roll * 2 + " (Critical Hit)" : String.valueOf(roll);
+            if (hitResult.isCritical()) {
+                roll *= 2;
+            }
+            e.setDamage(roll);
+            if (damager instanceof Player) {
+                conditionalSend(damager, "&aRolled &6" + weapon.getDamageRoll() + "&a and dealt &6" + rollMsg + "&a damage");
+            }
+        }
+
+        AttackEvent event = new AttackEvent(damager, damagee, !miss, e.getDamage(), false, null);
+        Bukkit.getPluginManager().callEvent(event);
+
+        if (!miss) {
+            e.setDamage(event.getDamage());
+        }
+
+        if (event.isCancelled()) {
+            e.setCancelled(true);
         }
     }
 
@@ -137,6 +170,13 @@ public class CombatManager implements Listener {
         LivingEntity victim = (LivingEntity) e.getEntity();
         LivingEntity attacker = (LivingEntity) projectile.getShooter();
 
+        PreAttackEvent preAttackEvent = new PreAttackEvent(attacker, victim, true, projectile);
+        Bukkit.getPluginManager().callEvent(preAttackEvent);
+        if (preAttackEvent.isCancelled()) {
+            e.setCancelled(true);
+            return;
+        }
+
         applyBadKarma(victim, attacker);
 
         String damageTag = null;
@@ -157,22 +197,34 @@ public class CombatManager implements Listener {
         String dice = damageTag.replace("mcdndproj", "");
         int prof = Integer.parseInt(profTag.replace("mcdndprof", ""));
 
-        if (!rollForHit(attacker, victim, prof, true)) {
+        boolean miss = false;
+        HitResult hitResult = rollForHit(attacker, victim, prof, true);
+        if (!hitResult.isSuccessfulHit()) {
+            miss = true;
             e.setCancelled(true);
             if (victim instanceof Mob) {
                 Mob mob = (Mob) victim;
                 mob.setTarget(attacker);
             }
             Utils.playSound(Sound.ENTITY_ARROW_HIT, attacker, victim);
-            return;
         }
 
-        int roll = Utils.roll(dice);
-        if (attacker instanceof Player) {
-            conditionalSend(attacker, "&aRolled &6" + dice + "&a and dealt &6" + roll + "&a damage");
+        if (!miss) {
+            int roll = Utils.roll(dice);
+            String rollMsg = hitResult.isCritical() ? roll * 2 + " (Critical Hit)" : String.valueOf(roll);
+            if (hitResult.isCritical()) {
+                roll *= 2;
+            }
+            conditionalSend(attacker, "&aRolled &6" + dice + "&a and dealt &6" + rollMsg + "&a damage");
+            e.setDamage(roll);
         }
 
-        e.setDamage(roll);
+        AttackEvent event = new AttackEvent(attacker, victim, !miss, e.getDamage(), true, projectile);
+        Bukkit.getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            e.setCancelled(true);
+        }
     }
 
     private WeaponProfile getWeaponProfile(ItemStack item) {
@@ -205,24 +257,27 @@ public class CombatManager implements Listener {
         return 0;
     }
 
-    private boolean rollForHit(LivingEntity attacker, LivingEntity defender, WeaponProfile weapon) {
+    private HitResult rollForHit(LivingEntity attacker, LivingEntity defender, WeaponProfile weapon) {
         PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(attacker);
         int profBonus = stats.isProficient(weapon.getType()) ? stats.getProficiencyBonus() : 0;
 
         return rollForHit(attacker, defender, profBonus, weapon.isRanged());
     }
 
-    private boolean rollForHit(LivingEntity attacker, LivingEntity defender, int prof, boolean ranged) {
+    private HitResult rollForHit(LivingEntity attacker, LivingEntity defender, int prof, boolean ranged) {
         int enemyArmorClass = calculateArmorClass(defender);
         int attackRollBonus = calculateAttackBonus(attacker, prof, ranged);
 
         int adv = getAdvantage(attacker, defender, ranged);
 
         int roll = Utils.roll("1d20", adv);
+        if (roll == 20) {
+            return new HitResult(true, true);
+        }
         roll += attackRollBonus;
 
         conditionalSend(attacker, "&oEnemy AC: " + enemyArmorClass + ", Roll Bonus: " + attackRollBonus + ", Roll: " + roll);
-        return roll >= enemyArmorClass;
+        return new HitResult(roll >= enemyArmorClass, false);
     }
 
     public int calculateArmorClass(LivingEntity e) {
