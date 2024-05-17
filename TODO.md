@@ -6,3 +6,5 @@
 - Make dash an action
 - Attack opportunities
 - Attack mods
+- Make shove be able to miss/fail
+- Ranged weapons working with damage system
