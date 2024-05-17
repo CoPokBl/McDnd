@@ -183,7 +183,7 @@ public class CombatManager implements Listener {
         PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(entity);
         int prof = stats.isProficient(weapon.getType()) ? stats.getProficiencyBonus() : 0;
 
-        e.getEntity().addScoreboardTag("mcdndproj" + weapon.getDamage());
+        e.getEntity().addScoreboardTag("mcdndproj" + weapon.getDamage().getDamageString());
         e.getEntity().addScoreboardTag("mcdndprof" + prof);
     }
 
