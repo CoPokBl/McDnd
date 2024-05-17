@@ -1,6 +1,7 @@
 package net.serble.mcdnd;
 
 import net.serble.mcdnd.actions.Action;
+import net.serble.mcdnd.attackmodifiers.AttackModifier;
 import net.serble.mcdnd.schemas.*;
 import net.serble.mcdnd.schemas.events.AttackEvent;
 import net.serble.mcdnd.schemas.events.PreAttackEvent;
@@ -25,12 +26,12 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
 
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class CombatManager implements Listener {
     private final HashMap<UUID, Action> actionsWaitingForTarget = new HashMap<>();
+    private final HashMap<UUID, Action> actionsWaitingForAttack = new HashMap<>();
+    private final HashMap<UUID, List<AttackModifier>> attackModifiers = new HashMap<>();
 
     private void conditionalSend(LivingEntity p, String msg) {
         if (!Main.getInstance().getConflictManager().isInCombat(p)) {
@@ -90,7 +91,20 @@ public class CombatManager implements Listener {
         }
 
         if (!miss) {
-            int roll = rollDamage(damager, damagee, weapon.getDamage());
+            Damage finalDamage = weapon.getDamage();
+
+            ensurePlayerAmExists(damager);
+            for (AttackModifier mod : attackModifiers.get(damager.getUniqueId())) {
+                finalDamage = mod.modifyDamage(weapon, finalDamage);
+            }
+            Action attackWaitingAction = getWaitingAttackAction(damager);
+            if (attackWaitingAction != null) {
+                finalDamage = attackWaitingAction
+                        .runWithAttack(damager, weapon, finalDamage)
+                        .modifyDamage(weapon, finalDamage);
+            }
+
+            int roll = rollDamage(damager, damagee, finalDamage);
             String rollMsg = hitResult.isCritical() ? roll * 2 + " (Critical Hit)" : String.valueOf(roll);
             if (hitResult.isCritical()) {
                 roll *= 2;
@@ -395,6 +409,18 @@ public class CombatManager implements Listener {
         actionsWaitingForTarget.remove(entity.getUniqueId());
     }
 
+    public Action getWaitingAttackAction(LivingEntity entity) {
+        return actionsWaitingForAttack.get(entity.getUniqueId());
+    }
+
+    public void registerWaitingAttackAction(LivingEntity entity, Action action) {
+        actionsWaitingForAttack.put(entity.getUniqueId(), action);
+    }
+
+    public void cancelWaitingAttackAction(LivingEntity entity) {
+        actionsWaitingForAttack.remove(entity.getUniqueId());
+    }
+
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         Action action = getWaitingAction(e.getPlayer());
@@ -421,4 +447,14 @@ public class CombatManager implements Listener {
         e.setCancelled(true);
     }
 
+    private void ensurePlayerAmExists(LivingEntity e) {
+        if (!attackModifiers.containsKey(e.getUniqueId())) {
+            attackModifiers.put(e.getUniqueId(), new ArrayList<>());
+        }
+    }
+
+    public void addPlayerAttackMod(LivingEntity e, AttackModifier mod) {
+        ensurePlayerAmExists(e);
+        attackModifiers.get(e.getUniqueId()).add(mod);
+    }
 }

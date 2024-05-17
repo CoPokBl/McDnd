@@ -136,8 +136,17 @@ public class Conflict {
         do {  // Change turn to first non-dead combatant
             if (attempts > 1000) {
                 // Dump some info
+                boolean allDead = true;
                 for (Combatant c : turns) {
+                    if (!c.isDead()) {
+                        allDead = false;
+                    }
                     Bukkit.getLogger().info(c.getEntity().getName() + " is dead: " + c.isDead());
+                }
+
+                if (allDead) {
+                    Main.getInstance().getConflictManager().endConflict(this);
+                    return;
                 }
                 throw new RuntimeException("Infinite loop detected");
             }
@@ -147,7 +156,12 @@ public class Conflict {
                 currentTurn = 0;
             }
         } while (turns[currentTurn].isDead());
-        currentTurnMovementRemaining = BaseMovement;
+    }
+
+    public void initTurn() {
+        PlayerStats cTurnStats = Main.getInstance().getPlayerManager().getStatsFor(turns[currentTurn].getEntity());
+
+        currentTurnMovementRemaining = cTurnStats.getMovementSpeed();
         currentTurnActionsRemaining = 1;
         currentTurnBonusActionsRemaining = 1;
     }

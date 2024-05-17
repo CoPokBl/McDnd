@@ -1,6 +1,8 @@
 package net.serble.mcdnd.schemas;
 
 import net.serble.mcdnd.actions.Action;
+import net.serble.mcdnd.actions.general.Dash;
+import net.serble.mcdnd.actions.general.Shove;
 import net.serble.mcdnd.classes.DndClass;
 
 import java.util.ArrayList;
@@ -10,6 +12,7 @@ import java.util.List;
 public abstract class PlayerStats {
     protected int level = 1;
     protected int maxHealth = 20;
+    protected int movementSpeed = 18;
 
     protected int dexterity;
     protected int charisma;
@@ -43,6 +46,11 @@ public abstract class PlayerStats {
         setWisdom((int) (Math.random() * 19) + 1);
         setConstitution((int) (Math.random() * 19) + 1);
         return this;
+    }
+
+    public void addBaseActions() {
+        actions.add(new Dash());
+        actions.add(new Shove());
     }
 
     public int get(AbilityScore score) {
@@ -144,5 +152,9 @@ public abstract class PlayerStats {
 
     public int getLevel() {
         return level;
+    }
+
+    public int getMovementSpeed() {
+        return movementSpeed;
     }
 }

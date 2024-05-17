@@ -1,7 +1,7 @@
 package net.serble.mcdnd.classes;
 
 import net.serble.mcdnd.Utils;
-import net.serble.mcdnd.actions.spells.FireBolt;
+import net.serble.mcdnd.actions.general.SneakAttack;
 import net.serble.mcdnd.schemas.AbilityScore;
 import net.serble.mcdnd.schemas.PlayerStats;
 
@@ -32,8 +32,11 @@ public class Rogue extends PlayerStats {
         weaponProficiencies.clear();
         actions.clear();
 
-        actions.add(new FireBolt());
+        // Actions
+        addBaseActions();
+        actions.add(new SneakAttack());
 
+        // Saving throw profs (Doesn't change)
         savingThrowProficiencies.add(AbilityScore.Dexterity);
         savingThrowProficiencies.add(AbilityScore.Intelligence);
 

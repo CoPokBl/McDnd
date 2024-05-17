@@ -262,9 +262,14 @@ public class PlayerManager implements Listener {
         // Display waiting action
         Action waitingAction = Main.getInstance().getCombatManager().getWaitingAction(p);
         if (waitingAction != null) {
-            p.sendTitle("", Utils.t("&9Select a target by clicking them..."), 0, 40, 1);
+            p.sendTitle(Utils.t(waitingAction.getName()), Utils.t("&9Select a target by clicking them..."), 0, 40, 1);
         } else {
             p.sendTitle("", "", 0, 0, 0);
+        }
+
+        Action attackWaitingAction = Main.getInstance().getCombatManager().getWaitingAttackAction(p);
+        if (attackWaitingAction != null) {
+            p.sendTitle(Utils.t(attackWaitingAction.getName()), Utils.t("&9Make an attack..."), 0, 40, 1);
         }
 
         updateScoreboard(p);
@@ -300,7 +305,7 @@ public class PlayerManager implements Listener {
             if (Main.getInstance().getConflictManager().isTurn(p)) {
                 inv.setItem(17, endTurn);
                 if (conflict.currentTurnActionsRemaining > 0) {
-                    inv.setItem(16, dash);
+                    //inv.setItem(16, dash); Use the actions menu instead
                 }
             }
         } else {
@@ -367,6 +372,10 @@ public class PlayerManager implements Listener {
 
     public boolean abilityCheck(LivingEntity p, AbilityScore ability, int passValue, int adv) {
         return abilityRoll(p, ability, adv) >= passValue;
+    }
+
+    public boolean abilityCheck(LivingEntity p, Skill ability, int passValue, int adv) {
+        return abilityCheck(p, ability.getRollType(), passValue, adv);
     }
 
     public boolean savingThrow(LivingEntity p, AbilityScore ability, int passValue) {
@@ -474,5 +483,4 @@ public class PlayerManager implements Listener {
 
         player.setScoreboard(main);
     }
-
 }

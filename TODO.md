@@ -5,3 +5,4 @@
 - 30 points to create character stats (start at 8, no lower than 8 no higher than 15)
 - Make dash an action
 - Attack opportunities
+- Attack mods

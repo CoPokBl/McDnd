@@ -279,6 +279,8 @@ public class ConflictManager implements Listener {
         }
 
         Main.getInstance().getEnvironmentManager().applyEnvironmentalDamages(conflict.getCurrentTurnEntity());
+
+        conflict.initTurn();
     }
 
     public void trackMovement(Conflict conflict) {  // Calculate movement

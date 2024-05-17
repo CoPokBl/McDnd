@@ -3,10 +3,12 @@ package net.serble.mcdnd.schemas;
 import net.serble.mcdnd.Tuple;
 import net.serble.mcdnd.Utils;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Damage {
-    private final Tuple<DamageType, String>[] damages;
+    private Tuple<DamageType, String>[] damages;
     private String damageString = "";
 
     @SafeVarargs
@@ -40,5 +42,14 @@ public class Damage {
 
     public String getDamageString() {
         return damageString;
+    }
+
+    public Damage add(Damage dmg) {
+        List<Tuple<DamageType, String>> ourDmgs = Arrays.stream(damages).collect(Collectors.toList());
+        List<Tuple<DamageType, String>> newDmgs = Arrays.stream(dmg.getDamages()).collect(Collectors.toList());
+        ourDmgs.addAll(newDmgs);
+        //noinspection unchecked  trust me bro
+        damages = ourDmgs.toArray(new Tuple[0]);
+        return this;
     }
 }
