@@ -30,18 +30,10 @@ public class Utils {
     }
 
     public static int roll(String str) {
-        String[] parts1 = str.split("d");
-        if (parts1.length != 2) {
-            throw new RuntimeException("Invalid die format");
-        }
-
-        String[] parts2 = parts1[1].split("\\+");
-        int sides = Integer.parseInt(parts2[0]);
-        int dice = Integer.parseInt(parts1[0]);
-        int addition = 0;
-        if (parts2.length > 1) {
-            addition = Integer.parseInt(parts2[1]);
-        }
+        Integer[] parsedRoll = parseRollString(str);
+        int dice = parsedRoll[0];
+        int sides = parsedRoll[1];
+        int addition = parsedRoll[2];
 
         int total = 0;
         for (int i = 0; i < dice; i++) {
@@ -63,19 +55,25 @@ public class Utils {
     }
 
     // Parse things like 1d4 or 2d20
-    public static Tuple<Integer, Integer> parseRollString(String str) {
-        String[] parts = str.split("d");
-        if (parts.length != 2) {
-            return null;
+    public static Integer[] parseRollString(String str) {
+        String[] parts1 = str.split("d");
+        if (parts1.length != 2) {
+            throw new RuntimeException("Invalid die format: " + str);
         }
 
-        try {
-            int dice = Integer.parseInt(parts[0]);
-            int sides = Integer.parseInt(parts[1]);
-            return new Tuple<>(dice, sides);
-        } catch (NumberFormatException e) {
-            return null;
+        String[] parts2 = parts1[1].split("\\+");
+        int sides = Integer.parseInt(parts2[0]);
+        int dice = Integer.parseInt(parts1[0]);
+        int addition = 0;
+        if (parts2.length > 1) {
+            addition = Integer.parseInt(parts2[1]);
         }
+
+        return new Integer[] {
+                dice,
+                sides,
+                addition
+        };
     }
 
     public static void setActionBar(Player p, String msg) {
@@ -114,17 +112,39 @@ public class Utils {
     }
 
     public static Tuple<Integer, Integer> calculateRollRange(String roll) {
-        Tuple<Integer, Integer> parsedRoll = parseRollString(roll);
-        if (parsedRoll == null) {
-            return null;
-        }
-        return new Tuple<>(parsedRoll.a(), parsedRoll.a() * parsedRoll.b());
+        Integer[] parsedRoll = parseRollString(roll);
+        int dice = parsedRoll[0];
+        int sides = parsedRoll[1];
+        int add = parsedRoll[2];
+        return new Tuple<>(dice + add, dice * sides + add);
     }
 
     public static String getRollDisplayRange(String roll) {
         Tuple<Integer, Integer> range = calculateRollRange(roll);
-        assert range != null;
         return range.a() + "~" + range.b();
+    }
+
+    public static String getDamageDisplayRange(Damage damage) {
+        Tuple<Integer, Integer> range = calculateDamageRange(damage);
+        return range.a() + "~" + range.b();
+    }
+
+    public static Tuple<Integer, Integer> calculateDamageRange(Damage damage) {
+        List<Tuple<Integer, Integer>> individualRanges = new ArrayList<>();
+        for (Tuple<DamageType, String> dmg : damage.getDamages()) {
+            Tuple<Integer, Integer> rollRange = calculateRollRange(dmg.b());
+            individualRanges.add(rollRange);
+        }
+
+        // Add up the values
+        int min = 0;
+        int max = 0;
+        for (Tuple<Integer, Integer> range : individualRanges) {
+            min += range.a();
+            max += range.b();
+        }
+
+        return new Tuple<>(min, max);
     }
 
     public static void playSound(Sound sound, LivingEntity... players) {
@@ -248,8 +268,14 @@ public class Utils {
             DamageType type = DamageType.getFromPrefix(typeStr);
             dmgs.add(new Tuple<>(type, dmg.substring(2)));
         }
-        Damage dmg = new Damage(dmgs);
-        dmg.setDamageString(dmgStr);
-        return dmg;
+        return new Damage(dmgs);
+    }
+
+    public static String serialiseDamage(Damage damage) {
+        StringBuilder str = new StringBuilder();
+        for (Tuple<DamageType, String> dmg : damage.getDamages()) {
+            str.append(dmg.a().getPrefix()).append(dmg.b()).append(",");
+        }
+        return str.substring(0, str.length() - 1);
     }
 }

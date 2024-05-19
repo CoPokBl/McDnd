@@ -9,6 +9,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.Objects;
 
@@ -64,6 +65,13 @@ public class DndCommand implements CommandExecutor {
             PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(p);
             stats.setLevel(Integer.parseInt(args[1]));
             s(p, "&aSet level to " + args[1]);
+            return true;
+        }
+
+        if (Objects.equals(args[0], "genlore")) {
+            ItemStack held = p.getInventory().getItemInMainHand();
+            Main.getInstance().getItemManager().generateLore(held);
+            s(p, "&aDone!");
             return true;
         }
 

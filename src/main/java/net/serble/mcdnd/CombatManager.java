@@ -216,7 +216,8 @@ public class CombatManager implements Listener {
             return;
         }
 
-        String dice = damageTag.replace("mcdndproj", "");
+        String damageStr = damageTag.replace("mcdndproj", "");
+        Damage damage = Damage.parse(damageStr);
         int prof = Integer.parseInt(profTag.replace("mcdndprof", ""));
 
         boolean miss = false;
@@ -232,12 +233,12 @@ public class CombatManager implements Listener {
         }
 
         if (!miss) {
-            int roll = Utils.roll(dice);
-            String rollMsg = hitResult.isCritical() ? roll * 2 + " (Critical Hit)" : String.valueOf(roll);
+            int roll = rollDamage(attacker, victim, damage);
+            String rollMsg = hitResult.isCritical() ? "&c" + roll * 2 + " (Critical Hit)" : String.valueOf(roll);
             if (hitResult.isCritical()) {
                 roll *= 2;
             }
-            conditionalSend(attacker, "&aRolled &6" + dice + "&a and dealt &6" + rollMsg + "&a damage");
+            conditionalSend(attacker, "&aRolled &6" + damageStr + "&a and dealt &6" + rollMsg + "&a damage");
             e.setDamage(roll);
         }
 
@@ -276,7 +277,7 @@ public class CombatManager implements Listener {
         boolean isCustom = NbtHandler.itemStackHasTag(item, "customitem", PersistentDataType.STRING);
 
         if (isCustom && Objects.equals(NbtHandler.itemStackGetTag(item, "customitem", PersistentDataType.STRING), "armor")) {
-            return NbtHandler.itemStackGetTag(item, "armorbonus", PersistentDataType.INTEGER);
+            return Objects.requireNonNull(NbtHandler.itemStackGetTag(item, "armorbonus", PersistentDataType.INTEGER));
         }
 
         return 0;

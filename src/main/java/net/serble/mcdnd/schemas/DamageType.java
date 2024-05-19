@@ -1,19 +1,29 @@
 package net.serble.mcdnd.schemas;
 
 public enum DamageType {
-    Bludgeoning,
-    Piecing,
-    Slashing,
-    Cold,
-    Fire,
-    Lightning,
-    Thunder,
-    Acid,
-    Poison,
-    Radiant,
-    Necrotic,
-    Force,
-    Psychic;
+    Bludgeoning("BL"),
+    Piecing("PI"),
+    Slashing("SL"),
+    Cold("CO"),
+    Fire("FI"),
+    Lightning("LI"),
+    Thunder("TH"),
+    Acid("AC"),
+    Poison("PO"),
+    Radiant("RA"),
+    Necrotic("NE"),
+    Force("FO"),
+    Psychic("PS");
+
+    private final String prefix;
+
+    DamageType(String prefix) {
+        this.prefix = prefix.toUpperCase();
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
 
     public static DamageType getFromPrefix(String prefix) {
         String pre = prefix.substring(0, 2).toUpperCase();

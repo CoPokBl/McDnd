@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 
 public class Damage {
     private Tuple<DamageType, String>[] damages;
-    private String damageString = "";
 
     @SafeVarargs
     public Damage(Tuple<DamageType, String>... dmgs) {
@@ -36,12 +35,8 @@ public class Damage {
         return damages;
     }
 
-    public void setDamageString(String damageString) {
-        this.damageString = damageString;
-    }
-
     public String getDamageString() {
-        return damageString;
+        return Utils.serialiseDamage(this);
     }
 
     public Damage add(Damage dmg) {

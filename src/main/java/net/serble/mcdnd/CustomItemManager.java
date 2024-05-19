@@ -1,5 +1,6 @@
 package net.serble.mcdnd;
 
+import net.serble.mcdnd.schemas.Damage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -35,7 +36,7 @@ public class CustomItemManager implements Listener {
 
             if (NbtHandler.itemStackHasTag(item, "customitem", PersistentDataType.STRING) &&
                     Objects.equals(NbtHandler.itemStackGetTag(item, "customitem", PersistentDataType.STRING), "supplies")) {
-                total += NbtHandler.itemStackGetTag(item, "supplyvalue", PersistentDataType.INTEGER) * item.getAmount();
+                total += Objects.requireNonNull(NbtHandler.itemStackGetTag(item, "supplyvalue", PersistentDataType.INTEGER)) * item.getAmount();
             }
         }
         return total;
@@ -50,7 +51,7 @@ public class CustomItemManager implements Listener {
 
             if (NbtHandler.itemStackHasTag(item, "customitem", PersistentDataType.STRING) &&
                     Objects.equals(NbtHandler.itemStackGetTag(item, "customitem", PersistentDataType.STRING), "supplies")) {
-                int value = NbtHandler.itemStackGetTag(item, "supplyvalue", PersistentDataType.INTEGER);
+                int value = Objects.requireNonNull(NbtHandler.itemStackGetTag(item, "supplyvalue", PersistentDataType.INTEGER));
                 if (value * item.getAmount() >= amount) {
                     int remaining = amount % value;
                     int toRemoveAmount = (amount - remaining) / value;
@@ -66,6 +67,49 @@ public class CustomItemManager implements Listener {
 
         for (ItemStack item : toRemove) {
             p.getInventory().remove(item);
+        }
+    }
+
+    public void generateLore(ItemStack item) {
+        if (item == null) {
+            return;
+        }
+
+        if (!NbtHandler.itemStackHasTag(item, "customitem", PersistentDataType.STRING)) {
+            return;
+        }
+
+        switch (Objects.requireNonNull(NbtHandler.itemStackGetTag(item, "customitem", PersistentDataType.STRING))) {
+            case "melee": {
+                String roll = NbtHandler.itemStackGetTag(item, "damageroll", PersistentDataType.STRING);
+                Utils.setLore(item,
+                        "&6Melee weapon",
+                        "&7Damage: &6" + Utils.getDamageDisplayRange(Damage.parse(roll)));
+                break;
+            }
+
+            case "ranged": {
+                String roll = NbtHandler.itemStackGetTag(item, "damageroll", PersistentDataType.STRING);
+                Utils.setLore(item,
+                        "&6Ranged weapon",
+                        "&7Damage: &6" + Utils.getDamageDisplayRange(Damage.parse(roll)));
+                break;
+            }
+
+            case "armor": {
+                Integer armorClass = NbtHandler.itemStackGetTag(item, "armorbonus", PersistentDataType.INTEGER);
+                assert armorClass != null;
+                Utils.setLore(item,
+                        "&6Armor",
+                        "&7Armor Class: &6" + (10 + armorClass));
+                break;
+            }
+
+            case "supplies": {
+                Integer foodValue = NbtHandler.itemStackGetTag(item, "supplyvalue", PersistentDataType.INTEGER);
+                Utils.setLore(item, "&6Camp Supplies: " + foodValue);
+                break;
+            }
         }
     }
 
@@ -86,9 +130,6 @@ public class CustomItemManager implements Listener {
             NbtHandler.itemStackSetTag(item, "customitem", PersistentDataType.STRING, "melee");
             NbtHandler.itemStackSetTag(item, "damageroll", PersistentDataType.STRING, roll);
             NbtHandler.itemStackSetTag(item, "weapontype", PersistentDataType.STRING, "SimpleMelee");
-            Utils.setLore(item,
-                    "&6Melee weapon",
-                    "&7Damage: &6" + Utils.getRollDisplayRange(roll));
             migratedAny = true;
         }
 
@@ -96,9 +137,6 @@ public class CustomItemManager implements Listener {
         if (armorType != 0) {
             NbtHandler.itemStackSetTag(item, "customitem", PersistentDataType.STRING, "armor");
             NbtHandler.itemStackSetTag(item, "armorbonus", PersistentDataType.INTEGER, armorType);
-            Utils.setLore(item,
-                    "&6Armor",
-                    "&7Armor Class: &6" + (10 + armorType));
             migratedAny = true;
         }
 
@@ -108,9 +146,6 @@ public class CustomItemManager implements Listener {
             NbtHandler.itemStackSetTag(item, "customitem", PersistentDataType.STRING, "ranged");
             NbtHandler.itemStackSetTag(item, "damageroll", PersistentDataType.STRING, roll);
             NbtHandler.itemStackSetTag(item, "weapontype", PersistentDataType.STRING, "SimpleRanged");
-            Utils.setLore(item,
-                    "&6Ranged weapon",
-                    "&7Damage: &6" + Utils.getRollDisplayRange(roll));
             migratedAny = true;
         }
 
@@ -118,10 +153,10 @@ public class CustomItemManager implements Listener {
         if (foodValue != 0) {
             NbtHandler.itemStackSetTag(item, "customitem", PersistentDataType.STRING, "supplies");
             NbtHandler.itemStackSetTag(item, "supplyvalue", PersistentDataType.INTEGER, foodValue);
-            Utils.setLore(item, "&6Camp Supplies: " + foodValue);
             migratedAny = true;
         }
 
+        generateLore(item);
         return migratedAny;
     }
 
