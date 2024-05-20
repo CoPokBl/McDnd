@@ -7,6 +7,7 @@ import net.serble.mcdnd.attackmodifiers.IncreaseWeaponDamage;
 import net.serble.mcdnd.schemas.Damage;
 import net.serble.mcdnd.schemas.WeaponProfile;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
 
 public class SneakAttack extends Action {
@@ -19,6 +20,7 @@ public class SneakAttack extends Action {
 
     @Override
     public AttackModifier runWithAttack(LivingEntity e, WeaponProfile weapon, Damage damage) {
+        Utils.particlePoint(e.getLocation(), Particle.CRIT_MAGIC, 10);
         return new IncreaseWeaponDamage("1d20");
     }
 

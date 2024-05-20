@@ -1,6 +1,7 @@
 package net.serble.mcdnd;
 
 import net.serble.mcdnd.schemas.Damage;
+import net.serble.mcdnd.schemas.DamageType;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -82,17 +83,13 @@ public class CustomItemManager implements Listener {
         switch (Objects.requireNonNull(NbtHandler.itemStackGetTag(item, "customitem", PersistentDataType.STRING))) {
             case "melee": {
                 String roll = NbtHandler.itemStackGetTag(item, "damageroll", PersistentDataType.STRING);
-                Utils.setLore(item,
-                        "&6Melee weapon",
-                        "&7Damage: &6" + Utils.getDamageDisplayRange(Damage.parse(roll)));
+                Utils.setLore(item, generateWeaponLore("Melee", roll));
                 break;
             }
 
             case "ranged": {
                 String roll = NbtHandler.itemStackGetTag(item, "damageroll", PersistentDataType.STRING);
-                Utils.setLore(item,
-                        "&6Ranged weapon",
-                        "&7Damage: &6" + Utils.getDamageDisplayRange(Damage.parse(roll)));
+                Utils.setLore(item, generateWeaponLore("Ranged", roll));
                 break;
             }
 
@@ -111,6 +108,27 @@ public class CustomItemManager implements Listener {
                 break;
             }
         }
+    }
+
+    private String[] generateWeaponLore(String type, String damageStr) {
+        String[] dmg = generateDamageLore(damageStr);
+        String[] out = new String[3 + dmg.length];
+
+        out[0] = "&6" + type + " weapon";
+        out[1] = "&7Damage: &6" + Utils.getDamageDisplayRange(Damage.parse(damageStr));
+        out[2] = "";
+        System.arraycopy(dmg, 0, out, 3, dmg.length);
+        return out;
+    }
+
+    private String[] generateDamageLore(String damageStr) {
+        Damage damage = Damage.parse(damageStr);
+        StringBuilder out = new StringBuilder();
+        for (Tuple<DamageType, String> dmg : damage.getDamages()) {
+            out.append(dmg.a().getColour()).append(dmg.b()).append(" ").append(dmg.a().name()).append(" damage\n");
+        }
+
+        return out.substring(0, out.length() - 1).split("\n");
     }
 
     public boolean migrateIfVanilla(ItemStack item) {

@@ -61,12 +61,21 @@ public class Utils {
             throw new RuntimeException("Invalid die format: " + str);
         }
 
-        String[] parts2 = parts1[1].split("\\+");
-        int sides = Integer.parseInt(parts2[0]);
         int dice = Integer.parseInt(parts1[0]);
+
+        int sides;
         int addition = 0;
-        if (parts2.length > 1) {
-            addition = Integer.parseInt(parts2[1]);
+
+        String[] partsAdd = parts1[1].split("\\+");
+        String[] partsSub = parts1[1].split("-");
+        if (partsAdd.length > 1) {
+            addition = Integer.parseInt(partsAdd[1]);
+            sides = Integer.parseInt(partsAdd[1]);
+        } else if (partsSub.length > 1) {
+            addition = -Integer.parseInt(partsSub[1]);
+            sides = Integer.parseInt(partsSub[1]);
+        } else {
+            sides = Integer.parseInt(parts1[1]);
         }
 
         return new Integer[] {
@@ -208,15 +217,6 @@ public class Utils {
         return (int) (double) ((stat - 10) / 2);
     }
 
-    public static void particleStream(Location from, Location to, Particle particle) {
-        Vector direction = to.toVector().subtract(from.toVector()).normalize();
-        Location current = from.clone();
-        while (current.distance(to) > 0.5) {
-            current.add(direction);
-            Objects.requireNonNull(from.getWorld()).spawnParticle(particle, current, 1);
-        }
-    }
-
     public static void particleStream(Location from, Location to, Particle particle, int ticks) {
         Vector direction = to.toVector().subtract(from.toVector()).normalize().multiply(0.1);
 
@@ -228,6 +228,19 @@ public class Utils {
                 current.add(direction);
                 Objects.requireNonNull(from.getWorld()).spawnParticle(particle, current, 1);
             }
+            timesRan.set(timesRan.get() + 1);
+            if (timesRan.get() >= ticks) {
+                runningTask.get().cancel();
+            }
+        }, 0, 1);
+        runningTask.set(task);
+    }
+
+    public static void particlePoint(Location loc, Particle particle, int ticks) {
+        AtomicReference<Integer> timesRan = new AtomicReference<>(0);
+        AtomicReference<BukkitTask> runningTask = new AtomicReference<>();
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
+            Objects.requireNonNull(loc.getWorld()).spawnParticle(particle, loc, 1);
             timesRan.set(timesRan.get() + 1);
             if (timesRan.get() >= ticks) {
                 runningTask.get().cancel();

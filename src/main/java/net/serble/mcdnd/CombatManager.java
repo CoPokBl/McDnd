@@ -102,6 +102,8 @@ public class CombatManager implements Listener {
                 finalDamage = attackWaitingAction
                         .runWithAttack(damager, weapon, finalDamage)
                         .modifyDamage(weapon, finalDamage);
+                damager.sendMessage(Utils.t("&aUsed &6" + attackWaitingAction.getName()));
+                cancelWaitingAttackAction(damager);
             }
 
             int roll = rollDamage(damager, damagee, finalDamage);

@@ -3,8 +3,7 @@
 - Make menu to select class and stats on join
 - Player info saving
 - 30 points to create character stats (start at 8, no lower than 8 no higher than 15)
-- Make dash an action
 - Attack opportunities
 - Attack mods
-- Make shove be able to miss/fail
-- Ranged weapons working with damage system
+- Make shove be able to miss/fail and make it melee
+- Make sneak attack only if adv and cancellable

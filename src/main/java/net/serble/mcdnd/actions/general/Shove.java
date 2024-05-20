@@ -34,9 +34,10 @@ public class Shove extends Action {
         deductAction(e);
 
         Vector direction = e.getLocation().getDirection();
-        target.setVelocity(direction.multiply(1.5).add(new Vector(0, 1, 0)));
+        Vector push = direction.multiply(1).setY(1);
+        target.setVelocity(push);
 
-        e.sendMessage(Utils.t("&aYou have shoved!"));
+        e.sendMessage(Utils.t("&aYou have shoved! " + direction.getX() + " " + direction.getY() + " " + direction.getZ()));
     }
 
     @Override
@@ -46,18 +47,18 @@ public class Shove extends Action {
 
     @Override
     public Material getIcon() {
-        return Material.LEATHER_BOOTS;
+        return Material.LEATHER_CHESTPLATE;
     }
 
     @Override
     public String getName() {
-        return "&2Dash";
+        return "&2Shove";
     }
 
     @Override
     public String[] getDescription() {
         return new String[] {
-                "&7Double your movement speed for this turn."
+                "&7Push someone away from you."
         };
     }
 }

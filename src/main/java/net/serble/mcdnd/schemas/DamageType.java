@@ -1,28 +1,34 @@
 package net.serble.mcdnd.schemas;
 
 public enum DamageType {
-    Bludgeoning("BL"),
-    Piecing("PI"),
-    Slashing("SL"),
-    Cold("CO"),
-    Fire("FI"),
-    Lightning("LI"),
-    Thunder("TH"),
-    Acid("AC"),
-    Poison("PO"),
-    Radiant("RA"),
-    Necrotic("NE"),
-    Force("FO"),
-    Psychic("PS");
+    Bludgeoning("BL", "8"),
+    Piecing("PI", "8"),
+    Slashing("SL", "8"),
+    Cold("CO", "b"),
+    Fire("FI", "6"),
+    Lightning("LI", "9"),
+    Thunder("TH", "5"),
+    Acid("AC", "a"),
+    Poison("PO", "2"),
+    Radiant("RA", "e"),
+    Necrotic("NE", "a"),
+    Force("FO", "c"),
+    Psychic("PS", "d");
 
     private final String prefix;
+    private final String colour;
 
-    DamageType(String prefix) {
+    DamageType(String prefix, String colourCode) {
         this.prefix = prefix.toUpperCase();
+        colour = "&" + colourCode;
     }
 
     public String getPrefix() {
         return prefix;
+    }
+
+    public String getColour() {
+        return colour;
     }
 
     public static DamageType getFromPrefix(String prefix) {

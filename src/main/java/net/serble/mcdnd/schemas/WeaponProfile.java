@@ -24,6 +24,6 @@ public class WeaponProfile {
     }
 
     public static WeaponProfile getFist() {
-        return new WeaponProfile(WeaponType.Fist, new Damage(DamageType.Bludgeoning, "1d4"), false);
+        return new WeaponProfile(WeaponType.Fist, new Damage(DamageType.Bludgeoning, "1d4-1"), false);
     }
 }

@@ -118,6 +118,14 @@ public abstract class BaseNpc extends CustomPathfinder {
         if (!Main.getInstance().isEnabled()) {
             return;  // The plugin is disabled
         }
+
+        Conflict conflict = Main.getInstance().getConflictManager().getConflict(entity);
+        if (conflict != null && !conflict.isCurrentTurn(entity)) {
+            Bukkit.getLogger().info("NO MOVE");
+            brain.getController().moveTo(entity);
+            return;
+        }
+
         ensureTarget();
         update();
     }

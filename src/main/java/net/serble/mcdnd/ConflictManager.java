@@ -84,9 +84,9 @@ public class ConflictManager implements Listener {
             String inName = in == Integer.MAX_VALUE ? "20 (Critical Success)" : in == Integer.MIN_VALUE ? "1 (Critical Failure)" : String.valueOf(in);
             conflict.announce(Utils.t("&6" + m.getName() + "&a rolled &6" + inName + "&a for initiative"));
 
-            if (!(m instanceof Player)) {
-                m.setAI(false);
-            }
+//            if (!(m instanceof Player)) {
+//                m.setAI(false);
+//            }
         }
 
         // Sort the list of people based on their initiatives
@@ -161,7 +161,7 @@ public class ConflictManager implements Listener {
             conflict.addParticipant(newComer);
             conflict.setTurns(Utils.addCombatant(conflict.getTurns(), new Combatant(newComer)));
             conflict.updateParticipants();
-            newComer.setAI(false);
+//            newComer.setAI(false);
             return false;
         }
 
@@ -250,7 +250,7 @@ public class ConflictManager implements Listener {
 
     private void endTurn(Conflict conflict) {
         if (!(conflict.getCurrentTurnEntity() instanceof Player)) {
-            conflict.getCurrentTurnEntity().setAI(false);
+            //conflict.getCurrentTurnEntity().setAI(false);
         }
 
         if (conflict.getCurrentMovementTask() != null) {
@@ -266,7 +266,7 @@ public class ConflictManager implements Listener {
     private void newTurn(Conflict conflict) {
         final boolean isPlayer = conflict.getCurrentTurnEntity() instanceof Player;
         if (!isPlayer) {
-            conflict.getCurrentTurnEntity().setAI(true);
+            //conflict.getCurrentTurnEntity().setAI(true);
         }
 
         trackMovement(conflict);

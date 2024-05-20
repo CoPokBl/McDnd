@@ -45,7 +45,7 @@ public class Dash extends Action {
 
     @Override
     public Material getIcon() {
-        return Material.LEATHER_BOOTS;
+        return Material.RABBIT_FOOT;
     }
 
     @Override

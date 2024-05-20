@@ -1,6 +1,7 @@
 package net.serble.mcdnd.commands;
 
 import net.serble.mcdnd.Main;
+import net.serble.mcdnd.NbtHandler;
 import net.serble.mcdnd.Utils;
 import net.serble.mcdnd.ai.SpeedyZombie;
 import net.serble.mcdnd.classes.Rogue;
@@ -10,6 +11,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Objects;
 
@@ -70,6 +72,19 @@ public class DndCommand implements CommandExecutor {
 
         if (Objects.equals(args[0], "genlore")) {
             ItemStack held = p.getInventory().getItemInMainHand();
+            Main.getInstance().getItemManager().generateLore(held);
+            s(p, "&aDone!");
+            return true;
+        }
+
+        if (Objects.equals(args[0], "setdmg")) {
+            if (args.length < 2) {
+                s(p, "&c/dnd setdmg <damage>");
+                return false;
+            }
+
+            ItemStack held = p.getInventory().getItemInMainHand();
+            NbtHandler.itemStackSetTag(held, "damageroll", PersistentDataType.STRING, args[1]);
             Main.getInstance().getItemManager().generateLore(held);
             s(p, "&aDone!");
             return true;
