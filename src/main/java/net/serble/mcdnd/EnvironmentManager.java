@@ -162,7 +162,7 @@ public class EnvironmentManager implements Listener {
                 break;
         }
 
-//        mob.setAI(true);
+        mob.setAware(true);
     }
 
     @EventHandler

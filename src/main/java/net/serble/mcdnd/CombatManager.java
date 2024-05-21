@@ -112,9 +112,7 @@ public class CombatManager implements Listener {
                 roll *= 2;
             }
             e.setDamage(roll);
-            if (damager instanceof Player) {
-                conditionalSend(damager, "&aRolled &6" + weapon.getDamage().getDamageString() + "&a and dealt &6" + rollMsg + "&a damage");
-            }
+            conditionalSend(damager, "&aRolled &6" + weapon.getDamage().getDamageString() + "&a and dealt &6" + rollMsg + "&a damage");
         }
 
         AttackEvent event = new AttackEvent(damager, damagee, !miss, e.getDamage(), false, null);

@@ -21,9 +21,11 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Utils {
+    private final static Random random = new Random();
 
     public static String t(String msg) {
         return ChatColor.translateAlternateColorCodes('&', msg);
@@ -37,7 +39,7 @@ public class Utils {
 
         int total = 0;
         for (int i = 0; i < dice; i++) {
-            total += (int) (Math.random() * sides) + 1;
+            total += random.nextInt(sides) + 1;
         }
         return total + addition;
     }
@@ -70,10 +72,10 @@ public class Utils {
         String[] partsSub = parts1[1].split("-");
         if (partsAdd.length > 1) {
             addition = Integer.parseInt(partsAdd[1]);
-            sides = Integer.parseInt(partsAdd[1]);
+            sides = Integer.parseInt(partsAdd[0]);
         } else if (partsSub.length > 1) {
             addition = -Integer.parseInt(partsSub[1]);
-            sides = Integer.parseInt(partsSub[1]);
+            sides = Integer.parseInt(partsSub[0]);
         } else {
             sides = Integer.parseInt(parts1[1]);
         }
@@ -290,5 +292,14 @@ public class Utils {
             str.append(dmg.a().getPrefix()).append(dmg.b()).append(",");
         }
         return str.substring(0, str.length() - 1);
+    }
+
+    public static void setAware(LivingEntity e, boolean aware) {
+        if (e instanceof Mob) {
+            ((Mob) e).setAware(aware);
+            if (!aware) {
+                e.setVelocity(new Vector(0, 0, 0));
+            }
+        }
     }
 }

@@ -64,9 +64,9 @@ public class Conflict {
         }
         updateParticipants();
 
-//        for (LivingEntity e : getParticipants()) {
-//            e.setAI(true);
-//        }
+        for (LivingEntity e : getParticipants()) {
+            Utils.setAware(e, true);
+        }
     }
 
     public void updateParticipants() {
