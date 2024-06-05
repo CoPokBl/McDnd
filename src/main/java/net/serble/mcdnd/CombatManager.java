@@ -41,6 +41,10 @@ public class CombatManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onHit(EntityDamageByEntityEvent e) {
+        if (e.isCancelled() || Main.getInstance().getRayCaster().isRayCast(e.getDamager())) {
+            return;
+        }
+
         if (e.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION) {
             return;  // Not a melee attack
         }
@@ -78,6 +82,7 @@ public class CombatManager implements Listener {
         }
 
         boolean miss = false;
+        String sendMsg = null;
         HitResult hitResult = rollForHit(damager, damagee, weapon);
         if (!hitResult.isSuccessfulHit()) {
             e.setCancelled(true);
@@ -87,7 +92,7 @@ public class CombatManager implements Listener {
                 mob.setTarget(damager);
             }
             Utils.playSound(Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, damager, damagee);
-            conditionalSend(damager, "&cYou missed!");
+            sendMsg = "&cYou missed!";
         }
 
         if (!miss) {
@@ -99,11 +104,16 @@ public class CombatManager implements Listener {
             }
             Action attackWaitingAction = getWaitingAttackAction(damager);
             if (attackWaitingAction != null) {
-                finalDamage = attackWaitingAction
-                        .runWithAttack(damager, weapon, finalDamage)
-                        .modifyDamage(weapon, finalDamage);
                 damager.sendMessage(Utils.t("&aUsed &6" + attackWaitingAction.getName()));
                 cancelWaitingAttackAction(damager);
+                AttackModifier mod = attackWaitingAction.runWithAttack(damager, damagee, weapon, finalDamage);
+
+                if (mod.shouldCancelAttack()) {
+                    e.setCancelled(true);
+                    return;
+                }
+
+                finalDamage = mod.modifyDamage(weapon, finalDamage);
             }
 
             int roll = rollDamage(damager, damagee, finalDamage);
@@ -112,7 +122,7 @@ public class CombatManager implements Listener {
                 roll *= 2;
             }
             e.setDamage(roll);
-            conditionalSend(damager, "&aRolled &6" + weapon.getDamage().getDamageString() + "&a and dealt &6" + rollMsg + "&a damage");
+            sendMsg = "&aRolled &6" + weapon.getDamage().getDamageString() + "&a and dealt &6" + rollMsg + "&a damage";
         }
 
         AttackEvent event = new AttackEvent(damager, damagee, !miss, e.getDamage(), false, null);
@@ -120,10 +130,16 @@ public class CombatManager implements Listener {
 
         if (!miss) {
             e.setDamage(event.getDamage());
+
+            if (e.getDamage() >= damagee.getHealth()) {  // Fatal
+                Utils.grantBasicKillExp(damager);
+            }
         }
 
         if (event.isCancelled()) {
             e.setCancelled(true);
+        } else {
+            damager.sendMessage(Utils.t(sendMsg));
         }
     }
 
@@ -354,7 +370,7 @@ public class CombatManager implements Listener {
         return Main.getInstance().getPlayerManager().getStatMod(e, AbilityScore.Strength) + prof;
     }
 
-    private int getAdvantage(LivingEntity attacker, LivingEntity defender, boolean ranged) {
+    public int getAdvantage(LivingEntity attacker, LivingEntity defender, boolean ranged) {
         boolean advantage = hasAdvantage(attacker, defender, ranged);
         boolean disadvantage = hasDisadvantage(attacker, defender, ranged);
 

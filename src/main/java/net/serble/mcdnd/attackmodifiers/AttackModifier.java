@@ -9,7 +9,12 @@ public class AttackModifier {
         return damage;
     }
 
+    @SuppressWarnings("unused")  // Overridable
     public void tickEffects() {
 
+    }
+
+    public boolean shouldCancelAttack() {
+        return false;
     }
 }

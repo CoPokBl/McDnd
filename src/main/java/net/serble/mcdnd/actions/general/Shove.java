@@ -31,10 +31,10 @@ public class Shove extends Action {
             return;
         }
 
-        deductAction(e);
+        deductBonusAction(e);
 
         Vector direction = e.getLocation().getDirection();
-        Vector push = direction.multiply(1).setY(1);
+        Vector push = direction.multiply(1).setY(0.5);
         target.setVelocity(push);
 
         e.sendMessage(Utils.t("&aYou have shoved! " + direction.getX() + " " + direction.getY() + " " + direction.getZ()));
@@ -42,7 +42,7 @@ public class Shove extends Action {
 
     @Override
     public boolean canUse(LivingEntity e) {
-        return hasAction(e);
+        return hasBonusAction(e);
     }
 
     @Override

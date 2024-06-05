@@ -1,0 +1,33 @@
+# Action Types
+# - leave
+# - jump (Specify 'target')
+
+data:
+  intro:
+    lines:
+      - "Narrator: Hello there"
+      - "Narrator: Welcome to hell :)"
+    choices:
+      leave:
+        text: "I want to leave"
+        skill: "none"
+        success:
+          fake-leave:
+            type: "jump"
+            target: "attempt-leave"
+      yay:
+        text: "Yay!!!"
+        skill: "none"
+        success:
+          actual-leave:
+            type: "leave"
+
+  attempt-leave:
+    lines:
+      - "Narrator: Ok bye!"
+      - "..."
+      - "Narrator: Welcome back!"
+    actions:
+      go-back:
+        type: "jump"
+        target: "intro"

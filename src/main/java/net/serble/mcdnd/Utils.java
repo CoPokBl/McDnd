@@ -3,9 +3,7 @@ package net.serble.mcdnd;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.serble.mcdnd.schemas.Combatant;
-import net.serble.mcdnd.schemas.Damage;
-import net.serble.mcdnd.schemas.DamageType;
+import net.serble.mcdnd.schemas.*;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -300,6 +298,53 @@ public class Utils {
             if (!aware) {
                 e.setVelocity(new Vector(0, 0, 0));
             }
+        }
+    }
+
+    public static String getStatsSmallDisplay(PlayerStats stats) {
+        String line1 = "&6DE CH ST IN WI CO";
+        String line2 = tcn(stats.get(AbilityScore.Dexterity)) + " " +
+                tcn(stats.get(AbilityScore.Charisma)) + " " +
+                tcn(stats.get(AbilityScore.Strength)) + " " +
+                tcn(stats.get(AbilityScore.Intelligence)) + " " +
+                tcn(stats.get(AbilityScore.Wisdom)) + " " +
+                tcn(stats.get(AbilityScore.Constitution));
+        return t(line1 + "\n&7" + line2);
+    }
+
+    public static String tcn(int val) {  // I needed a shorter name don't judge me
+        return twoCharacterNumber(val);
+    }
+
+    public static String twoCharacterNumber(int val) {  // Format the number so that it is '22' or '2 '
+        return val < 10 ? " " + val : String.valueOf(val);
+    }
+
+    public static String advStatusToName(int adv) {
+        switch (adv) {
+            case -1:
+                return "&cDisadvantage";
+            case 0:
+                return "&6Neutral";
+            case 1:
+                return "&aAdvantage";
+            default:
+                throw new IllegalArgumentException("adv must be -1, 0 or 1");
+        }
+    }
+
+    public static void grantBasicKillExp(LivingEntity e) {
+        PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(e);
+        grantExp(e, stats.getBasicKillExp());
+    }
+
+    public static void grantExp(LivingEntity e, int amount) {
+        PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(e);
+        stats.incrementExp(amount);
+
+        if (e instanceof Player) {
+            Player p = (Player) e;
+            p.sendTitle("", Utils.t("&6Gained " + amount + " experience"), 0, 20, 10);
         }
     }
 }

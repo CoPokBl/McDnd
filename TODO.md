@@ -1,9 +1,9 @@
-- Dialog
-- Actions menu
-- Make menu to select class and stats on join
-- Player info saving
-- 30 points to create character stats (start at 8, no lower than 8 no higher than 15)
-- Attack opportunities
-- Attack mods
-- Make shove be able to miss/fail and make it melee
-- Make sneak attack only if adv and cancellable
+- [ ] Dialog
+- [x] Actions menu
+- [ ] Make menu to select class and stats on join
+- [ ] Player info saving
+- [ ] 30 points to create character stats (start at 8, no lower than 8 no higher than 15)
+- [ ] Attack opportunities
+- [x] Attack mods
+- [ ] Make shove be able to miss/fail and make it melee
+- [x] Make sneak attack only if adv and cancellable

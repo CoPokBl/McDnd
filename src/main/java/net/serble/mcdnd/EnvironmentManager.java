@@ -16,9 +16,12 @@ import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
+@SuppressWarnings("UnstableApiUsage")
 public class EnvironmentManager implements Listener {
+    private final List<DamageSource> processedDamage = new ArrayList<>();
 
     public EnvironmentManager() {
         Bukkit.getScheduler().runTaskTimer(Main.getInstance(), this::applyEnvironmentalDamageToAllEntities, 20 * 6L, 20 * 6L);
@@ -27,8 +30,8 @@ public class EnvironmentManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onDamage(EntityDamageEvent e) {
-        //noinspection UnstableApiUsage
-        if (e.getDamageSource() instanceof ProcessedDamageSource) {
+        if (processedDamage.contains(e.getDamageSource())) {
+            processedDamage.remove(e.getDamageSource());  // Make sure we don't just alloc all the memory
             return;  // We have already processed it, return
         }
 
@@ -180,7 +183,7 @@ public class EnvironmentManager implements Listener {
     }
 
     @EventHandler
-    public void onDespawn(@SuppressWarnings("UnstableApiUsage") EntityRemoveEvent e) {
+    public void onDespawn(EntityRemoveEvent e) {
         if (!(e.getEntity() instanceof LivingEntity)) {
             return;
         }
@@ -194,15 +197,17 @@ public class EnvironmentManager implements Listener {
         Main.getInstance().getConflictManager().onDeath(deathEvent);
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     public Tuple<DamageType, Integer>[] damage(DamageSource source, LivingEntity target, Damage damage) {
         Tuple<Integer, Tuple<DamageType, Integer>[]> dmgInfo = getDamageAmount(source, target, damage);
-        ProcessedDamageSource processedDamageSource = new ProcessedDamageSource(source);
-        target.damage(dmgInfo.a(), processedDamageSource);  // TODO: class net.serble.mcdnd.schemas.ProcessedDamageSource cannot be cast to class org.bukkit.craftbukkit.v1_20_R3.damage.CraftDamageSource
+        if (source == null) {
+            target.damage(dmgInfo.a());
+            return dmgInfo.b();
+        }
+        processedDamage.add(source);
+        target.damage(dmgInfo.a(), source);
         return dmgInfo.b();
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     public Tuple<Integer, Tuple<DamageType, Integer>[]> getDamageAmount(DamageSource source, LivingEntity target, Damage damage) {
         int totalDmg = 0;
         @SuppressWarnings("unchecked")  // Please just believe me

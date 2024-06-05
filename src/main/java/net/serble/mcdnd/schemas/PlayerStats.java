@@ -11,6 +11,7 @@ import java.util.List;
 
 public abstract class PlayerStats {
     protected int level = 1;
+    protected int exp = 1;
     protected int maxHealth = 20;
     protected int movementSpeed = 18;
 
@@ -38,13 +39,85 @@ public abstract class PlayerStats {
         return Math.min(20, Math.max(0, val));
     }
 
-    public PlayerStats randomise() {
-        setDexterity((int) (Math.random() * 19) + 1);
-        setCharisma((int) (Math.random() * 19) + 1);
-        setStrength((int) (Math.random() * 19) + 1);
-        setIntelligence((int) (Math.random() * 19) + 1);
-        setWisdom((int) (Math.random() * 19) + 1);
-        setConstitution((int) (Math.random() * 19) + 1);
+    public static int getExpToLevel(int level) {
+        switch (level) {
+            case 1:
+                return 0;
+            case 2:
+                return 300;
+            case 3:
+                return 900;
+            case 4:
+                return 2700;
+            case 5:
+                return 6500;
+            case 6:
+                return 14000;
+            case 7:
+                return 23000;
+            case 8:
+                return 34000;
+            case 9:
+                return 48000;
+            case 10:
+                return 64000;
+            case 11:
+                return 85000;
+            default:  // Not implemented yet
+            case 12:
+                return 100_000;
+        }
+    }
+
+    public int getBasicKillExp() {
+        switch (level) {
+            case 1:
+                return 10;
+            case 2:
+                return 15;
+            case 3:
+                return 20;
+            case 4:
+                return 40;
+            case 5:
+                return 75;
+            case 6:
+                return 90;
+            case 7:
+                return 110;
+            case 8:
+                return 140;
+            case 9:
+                return 200;
+            case 10:
+                return 250;
+            case 11:
+                return 320;
+            default:  // Not implemented yet
+            case 12:
+                return 400;
+        }
+    }
+
+    public PlayerStats randomise() {  // Randomise each stat such that they all start at 8 and 30 points are distributed so that nothing is higher than 15
+        int[] stats = new int[6];
+        for (int i = 0; i < 6; i++) {
+            stats[i] = 8;
+        }
+        int points = 30;
+        while (points > 0) {
+            int index = (int) (Math.random() * 6);
+            if (stats[index] < 15) {
+                stats[index]++;
+                points--;
+            }
+        }
+        dexterity = stats[0];
+        charisma = stats[1];
+        strength = stats[2];
+        intelligence = stats[3];
+        wisdom = stats[4];
+        constitution = stats[5];
         return this;
     }
 
@@ -75,8 +148,16 @@ public abstract class PlayerStats {
 
     public abstract void setLevel(int lvl);
 
-    public void incrementLevel() {
-        setLevel(level + 1);
+    public void incrementExp(int amount) {
+        exp += amount;
+    }
+
+    public boolean canLevelUp() {
+        return exp >= getExpToLevel(level + 1);
+    }
+
+    public void levelUp() {
+        level++;
     }
 
     public void setDexterity(int dexterity) {

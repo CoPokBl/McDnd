@@ -9,6 +9,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -36,7 +39,8 @@ public class PlayerManager implements Listener {
     private final ItemStack beFriends = Utils.makeItem(Material.SUNFLOWER, "&eMake Peace");
     private final ItemStack shortRest = Utils.makeItem(Material.BREAD, "&bShort Rest");
     private final ItemStack longRest = Utils.makeItem(Material.RED_BED, "&bLong Rest");
-    private final ItemStack spells = Utils.makeItem(Material.BLAZE_ROD, "&eSpells");
+    private final ItemStack spells = Utils.makeItem(Material.BLAZE_ROD, "&eActions");
+    private final ItemStack inspect = Utils.makeItem(Material.PAPER, "&rInspect Entity");
 
     public PlayerManager() {
         Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
@@ -218,6 +222,33 @@ public class PlayerManager implements Listener {
             p.openInventory(inv);
             openInvs.put(p.getUniqueId(), new Tuple<>(PlayerCustomInventory.Actions, inv));
         }
+        if (stack.isSimilar(inspect)) {  // Get info about entity they are looking at
+            Main.getInstance().getRayCaster().rayCast(p, new RayCastCallback() {
+                @Override
+                public void run(Entity entity, Block hitBlock, BlockFace hitBlockFace) {
+                    if (!(entity instanceof LivingEntity)) {
+                        p.sendMessage(Utils.t("&cYou must be looking at a living entity"));
+                        return;
+                    }
+
+                    LivingEntity e = (LivingEntity) entity;
+                    PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(e);
+
+                    p.sendMessage(Utils.t("&6Information For: " + e.getName()));
+                    p.sendMessage(Utils.t("&7Level: &6" + stats.getLevel()));
+                    p.sendMessage(Utils.t("&7Armour Class: &6" + Main.getInstance().getCombatManager().calculateArmorClass(e)));
+                    p.sendMessage(Utils.t("&7Class: &6" + stats.getDndClass().getName()));
+
+                    p.sendMessage(Utils.getStatsSmallDisplay(stats));
+
+                    int meleeAdv = Main.getInstance().getCombatManager().getAdvantage(p, e, false);
+                    int rangedAdv = Main.getInstance().getCombatManager().getAdvantage(p, e, true);
+
+                    p.sendMessage(Utils.t("&7Melee Position: " + Utils.advStatusToName(meleeAdv)));
+                    p.sendMessage(Utils.t("&7Ranged Position: " + Utils.advStatusToName(rangedAdv)));
+                }
+            });
+        }
 
         updatePlayer(p);
     }
@@ -262,14 +293,12 @@ public class PlayerManager implements Listener {
         // Display waiting action
         Action waitingAction = Main.getInstance().getCombatManager().getWaitingAction(p);
         if (waitingAction != null) {
-            p.sendTitle(Utils.t(waitingAction.getName()), Utils.t("&9Select a target by clicking them..."), 0, 40, 1);
-        } else {
-            p.sendTitle("", "", 0, 0, 0);
+            p.sendTitle(Utils.t(waitingAction.getName()), Utils.t("&9Select a target by clicking them..."), 0, 20, 1);
         }
 
         Action attackWaitingAction = Main.getInstance().getCombatManager().getWaitingAttackAction(p);
         if (attackWaitingAction != null) {
-            p.sendTitle(Utils.t(attackWaitingAction.getName()), Utils.t("&9Make an attack..."), 0, 40, 1);
+            p.sendTitle(Utils.t(attackWaitingAction.getName()), Utils.t("&9Make an attack..."), 0, 20, 1);
         }
 
         updateScoreboard(p);
@@ -296,9 +325,10 @@ public class PlayerManager implements Listener {
                 "&6Constitution: &7" + stats.get(AbilityScore.Constitution)
                 );
         inv.setItem(11, statsItem);
+        inv.setItem(12, inspect);
 
         if (inCombat) {
-            inv.setItem(12, beFriends);
+            inv.setItem(13, beFriends);
             Conflict conflict = Main.getInstance().getConflictManager().getConflict(p);
 
             // Actual slots and glowing

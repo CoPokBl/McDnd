@@ -1,6 +1,7 @@
 package net.serble.mcdnd;
 
 import net.serble.mcdnd.schemas.RayCastCallback;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
@@ -20,6 +21,10 @@ public class RayCaster implements Listener {
         snowball.setGravity(false);
         snowball.setVelocity(entity.getLocation().getDirection().multiply(10));
         runningCasts.put(snowball.getUniqueId(), callback);
+    }
+
+    public boolean isRayCast(Entity e) {
+        return runningCasts.containsKey(e.getUniqueId());
     }
 
     @EventHandler

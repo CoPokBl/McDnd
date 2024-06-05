@@ -28,7 +28,7 @@ public abstract class Action {
         // Override to actually use
     }
 
-    public AttackModifier runWithAttack(LivingEntity e, WeaponProfile weapon, Damage damage) {
+    public AttackModifier runWithAttack(LivingEntity attacker, LivingEntity defender, WeaponProfile weapon, Damage damage) {
         return new AttackModifier();
     }
 
