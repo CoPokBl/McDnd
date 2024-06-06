@@ -1,9 +1,8 @@
 # Action Types
 # - leave
 # - jump (Specify 'target')
-#
-# If there is only one choice it is activated automatically
 
+begin: "intro"
 data:
   intro:
     lines:
@@ -19,10 +18,26 @@ data:
             target: "attempt-leave"
       yay:
         text: "Yay!!!"
-        skill: "none"
+        skill: "Religion"
+        dc: 10
         success:
           actual-leave:
             type: "leave"
+        failure:
+          sorry-fail:
+            type: "jump"
+            target: "fail-yay"
+      sneak-away:
+        text: "&oSneak away"
+        skill: "Stealth"
+        dc: 15
+        success:
+          actual-leave:
+            type: "leave"
+        failure:
+          sorry-fail:
+            type: "jump"
+            target: "attempt-leave"
 
   attempt-leave:
     lines:
@@ -31,7 +46,20 @@ data:
       - "Narrator: Welcome back!"
     choices:
       go-back:
-        text: ""
+        text: "Continue"
+        skill: "none"
+        success:
+          go-back:
+            type: "jump"
+            target: "intro"
+
+  fail-yay:
+    lines:
+      - "Narrator: I have short term memory loss"
+      - "Narrator: ..."
+    choices:
+      go-back:
+        text: "Continue"
         skill: "none"
         success:
           go-back:

@@ -36,7 +36,7 @@ public abstract class PlayerStats {
     }
 
     private int checkValue(int val) {  // Ensure value is within bounds
-        return Math.min(20, Math.max(0, val));
+        return Math.min(40, Math.max(0, val));
     }
 
     public static int getExpToLevel(int level) {
@@ -104,12 +104,18 @@ public abstract class PlayerStats {
         for (int i = 0; i < 6; i++) {
             stats[i] = 8;
         }
-        int points = 30;
+        int points = 27;
         while (points > 0) {
             int index = (int) (Math.random() * 6);
+
+            int upgradeCost = stats[index] > 13 ? 2 : 1;
+            if (upgradeCost > points) {
+                continue;
+            }
+
             if (stats[index] < 15) {
                 stats[index]++;
-                points--;
+                points -= upgradeCost;
             }
         }
         dexterity = stats[0];

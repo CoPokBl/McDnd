@@ -9,8 +9,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -223,31 +221,27 @@ public class PlayerManager implements Listener {
             openInvs.put(p.getUniqueId(), new Tuple<>(PlayerCustomInventory.Actions, inv));
         }
         if (stack.isSimilar(inspect)) {  // Get info about entity they are looking at
-            Main.getInstance().getRayCaster().rayCast(p, new RayCastCallback() {
-                @Override
-                public void run(Entity entity, Block hitBlock, BlockFace hitBlockFace) {
-                    if (!(entity instanceof LivingEntity)) {
-                        p.sendMessage(Utils.t("&cYou must be looking at a living entity"));
-                        return;
-                    }
+            Entity entity = Main.getInstance().getRayCaster().entityRayCast(p, 100);
+            if (!(entity instanceof LivingEntity)) {
+                p.sendMessage(Utils.t("&cYou must be looking at a living entity"));
+                return;
+            }
 
-                    LivingEntity e = (LivingEntity) entity;
-                    PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(e);
+            LivingEntity le = (LivingEntity) entity;
+            PlayerStats stats = Main.getInstance().getPlayerManager().getStatsFor(le);
 
-                    p.sendMessage(Utils.t("&6Information For: " + e.getName()));
-                    p.sendMessage(Utils.t("&7Level: &6" + stats.getLevel()));
-                    p.sendMessage(Utils.t("&7Armour Class: &6" + Main.getInstance().getCombatManager().calculateArmorClass(e)));
-                    p.sendMessage(Utils.t("&7Class: &6" + stats.getDndClass().getName()));
+            p.sendMessage(Utils.t("&6Information For: " + le.getName()));
+            p.sendMessage(Utils.t("&7Level: &6" + stats.getLevel()));
+            p.sendMessage(Utils.t("&7Armour Class: &6" + Main.getInstance().getCombatManager().calculateArmorClass(le)));
+            p.sendMessage(Utils.t("&7Class: &6" + stats.getDndClass().getName()));
 
-                    p.sendMessage(Utils.getStatsSmallDisplay(stats));
+            p.sendMessage(Utils.getStatsSmallDisplay(stats));
 
-                    int meleeAdv = Main.getInstance().getCombatManager().getAdvantage(p, e, false);
-                    int rangedAdv = Main.getInstance().getCombatManager().getAdvantage(p, e, true);
+            int meleeAdv = Main.getInstance().getCombatManager().getAdvantage(p, le, false);
+            int rangedAdv = Main.getInstance().getCombatManager().getAdvantage(p, le, true);
 
-                    p.sendMessage(Utils.t("&7Melee Position: " + Utils.advStatusToName(meleeAdv)));
-                    p.sendMessage(Utils.t("&7Ranged Position: " + Utils.advStatusToName(rangedAdv)));
-                }
-            });
+            p.sendMessage(Utils.t("&7Melee Position: " + Utils.advStatusToName(meleeAdv)));
+            p.sendMessage(Utils.t("&7Ranged Position: " + Utils.advStatusToName(rangedAdv)));
         }
 
         updatePlayer(p);

@@ -214,7 +214,7 @@ public class Utils {
     }
 
     public static int getStatMod(int stat) {
-        return (int) (double) ((stat - 10) / 2);
+        return (int) Math.floor((double) (stat - 10) / 2);
     }
 
     public static void particleStream(Location from, Location to, Particle particle, int ticks) {
@@ -349,6 +349,6 @@ public class Utils {
     }
 
     public static String successFailStr(boolean success) {
-        return t(success ? "&aSuccess" : "&aFailure");
+        return t(success ? "&aSuccess" : "&cFailure");
     }
 }

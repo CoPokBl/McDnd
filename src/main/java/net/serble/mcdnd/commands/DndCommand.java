@@ -6,6 +6,7 @@ import net.serble.mcdnd.Utils;
 import net.serble.mcdnd.ai.SpeedyZombie;
 import net.serble.mcdnd.classes.Rogue;
 import net.serble.mcdnd.schemas.PlayerStats;
+import net.serble.mcdnd.schemas.Skill;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -98,6 +99,24 @@ public class DndCommand implements CommandExecutor {
 
             int choice = Integer.parseInt(args[1]);
             Main.getInstance().getSpeech().selectChoice(p, choice);
+            return true;
+        }
+
+        if (Objects.equals(args[0], "randomstats")) {
+            Main.getInstance().getPlayerManager().getStatsFor(p).randomise();
+            s(p, "&aYour stats have been randomised!");
+            return true;
+        }
+
+        if (Objects.equals(args[0], "skillmod")) {
+            if (args.length < 2) {
+                s(p, "&c/dnd skillmod <skill>");
+                return false;
+            }
+
+            Skill skill = Skill.valueOf(args[1]);
+            int mod = Main.getInstance().getPlayerManager().getStatMod(p, skill.getRollType());
+            s(p, "&aMod of " + skill.name() + ": &7" + mod);
             return true;
         }
 

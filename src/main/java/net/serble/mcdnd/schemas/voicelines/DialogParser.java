@@ -26,8 +26,9 @@ public class DialogParser {
                 YamlConfiguration config = new YamlConfiguration();
                 config.load(file);
 
+                String startSec = config.getString("begin");
                 ConfigurationSection data = config.getConfigurationSection("data");
-                if (data == null) {
+                if (data == null || startSec == null) {
                     continue;
                 }
 
@@ -56,7 +57,7 @@ public class DialogParser {
                         }
 
                         String text = choice.getString("text", "FAILED TO LOAD");
-                        String skillStr = choice.getString("skill");
+                        String skillStr = choice.getString("skill", "none");
                         Skill skill = Objects.equals(skillStr, "none") ? null : Skill.valueOf(skillStr);
                         int dc = choice.getInt("dc", 0);
 
@@ -81,7 +82,7 @@ public class DialogParser {
                     sections.put(lineKey, sec);
                 }
 
-                dialogs.put(file.getName(), new Dialog(sections));
+                dialogs.put(file.getName(), new Dialog(sections, startSec));
             } catch (Exception e) {
                 Main.getInstance().getLogger().warning("Error parsing speech file: " + file.getName());
             }

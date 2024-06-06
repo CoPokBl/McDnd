@@ -4,14 +4,12 @@ import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Text;
-import net.serble.mcdnd.schemas.RayCastCallback;
 import net.serble.mcdnd.schemas.voicelines.Dialog;
 import net.serble.mcdnd.schemas.voicelines.DialogParser;
 import net.serble.mcdnd.schemas.voicelines.VoiceLineChoice;
 import net.serble.mcdnd.schemas.voicelines.VoiceLineSection;
 import org.bukkit.Bukkit;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
+import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -54,7 +52,7 @@ public class SpeechManager implements Listener {
         }
 
         speechStatuses.put(e.getUniqueId(), dialogKey);
-        triggerDialogOption(p, dialog.getFirstSection());
+        triggerDialogOption(p, dialog.getStartSection());
     }
 
     public void triggerDialogOption(Player p, String key) {
@@ -64,6 +62,11 @@ public class SpeechManager implements Listener {
         }
 
         VoiceLineSection sec = dialog.getSection(key);
+
+        if (sec == null) {
+            throw new RuntimeException("Voice line section doesn't exist for key: " + key);
+        }
+
         int cDelay = 0;
         for (String line : sec.getLines()) {
             sayTextLater(p, line, cDelay);
@@ -73,30 +76,35 @@ public class SpeechManager implements Listener {
         activeChoice.put(p.getUniqueId(), key);
 
         ComponentBuilder componentBuilder = new ComponentBuilder()
-                .append(Utils.t("&6Dialog Options:\n"));
+                .append(Utils.t("&3------------------------------\n&6Dialog Options:\n"));
 
         int cIndex = 0;
         for (VoiceLineChoice choice : sec.getChoices()) {
-            p.sendMessage("Choice loaded: " + choice.getText());
-
+            componentBuilder.append(Utils.t("&7> "));
             if (choice.getSkill() != null) {
                 componentBuilder
-                        .append("[" + choice.getSkill().name() + "] ")
+                        .append(Utils.t("&r[" + choice.getSkill().name() + "] "))
                         .event(new HoverEvent(
                                 HoverEvent.Action.SHOW_TEXT,
-                                new Text("Bonus: " + Main.getInstance().getPlayerManager().getStatMod(p, choice.getSkill().getRollType()))));
+                                new Text(Utils.t("&6Bonus: &7" + Main.getInstance().getPlayerManager().getStatMod(p, choice.getSkill().getRollType())))));
             }
             componentBuilder
-                    .append(choice.getText() + "\n")
+                    .append(Utils.t("&7" + choice.getText() + "\n"))
                     .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to select")))
-                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "dnd selectchoice " + cIndex));
+                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dnd selectchoice " + cIndex));
             cIndex++;
         }
+        componentBuilder.append(Utils.t("&3------------------------------"));
 
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> p.spigot().sendMessage(componentBuilder.build()), cDelay);
     }
 
     public void selectChoice(Player p, int choice) {
+        if (!isInDialog(p)) {
+            p.sendMessage(Utils.t("&cYou are not in dialog"));
+            return;
+        }
+
         Dialog dialog = dialogs.get(speechStatuses.get(p.getUniqueId()));
         if (dialog == null) {
             throw new RuntimeException("Dialog does not exist");
@@ -115,14 +123,15 @@ public class SpeechManager implements Listener {
                     choiceObj.getDifficultClass(),
                     0);
 
-            p.sendMessage(Utils.t("&7Ability Check Result (" + choiceObj.getSkill() + "): " + Utils.successFailStr(success)));
+            p.sendMessage(Utils.t("&7Ability Check Result (" + choiceObj.getSkill() + " [DC " + choiceObj.getDifficultClass() + "]): " + Utils.successFailStr(success)));
         }
 
         Tuple<String, String[]>[] actions = success ? choiceObj.getSuccessActions() : choiceObj.getFailActions();
         for (Tuple<String, String[]> action : actions) {
             switch (action.a()) {  // Type
                 case "leave": {
-                    p.sendMessage(Utils.t("&7&kConversation ended."));
+                    p.sendMessage(Utils.t("&7&oConversation ended."));
+                    speechStatuses.remove(p.getUniqueId());
                     break;
                 }
 
@@ -136,7 +145,10 @@ public class SpeechManager implements Listener {
     }
 
     public void sayTextLater(LivingEntity e, String text, int delay) {
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> e.sendMessage(Utils.t(text)), delay);
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            e.sendMessage(Utils.t(text));
+            Utils.playSound(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, e);
+        }, delay);
     }
 
     public void triggerDialogOptionLater(Player e, String option, int delay) {
@@ -150,16 +162,18 @@ public class SpeechManager implements Listener {
         }
 
         // Check if it was on an entity
-        Main.getInstance().getRayCaster().rayCast(event.getPlayer(), new RayCastCallback() {
-            @Override
-            public void run(Entity hitEntity, Block hitBlock, BlockFace hitBlockFace) {
-                if (hitEntity == null) {
-                    return;
-                }
+        Entity hitEntity = Main.getInstance().getRayCaster().entityRayCast(event.getPlayer(), 100);
 
-                // They interacted with entity, can we talk to them
-                startDialog(event.getPlayer(), "test.yml");
-            }
-        });
+        if (hitEntity == null) {
+            return;
+        }
+
+        if (isInDialog(event.getPlayer())) {  // Only check if they clicked an entity
+            event.getPlayer().sendMessage(Utils.t("&cYou are already in conversation"));
+            return;
+        }
+
+        // They interacted with entity, can we talk to them
+        startDialog(event.getPlayer(), "test.yml");
     }
 }

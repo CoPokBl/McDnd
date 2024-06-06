@@ -8,8 +8,6 @@ import net.serble.mcdnd.schemas.events.PreAttackEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.*;
@@ -446,21 +444,14 @@ public class CombatManager implements Listener {
         }
 
         // Check if they are looking at an entity and get that entity
-        Main.getInstance().getRayCaster().rayCast(e.getPlayer(), new RayCastCallback() {
-            @Override
-            public void run(Entity hitEntity, Block hitBlock, BlockFace hitBlockFace) {
-                Action waitingAction = getWaitingAction(e.getPlayer());
-                cancelWaitingAction(e.getPlayer());
-                if (waitingAction == null || hitEntity == null) {
-                    return;
-                }
-                if (!(hitEntity instanceof LivingEntity)) {
-                    return;
-                }
-                waitingAction.runWithTarget(e.getPlayer(), (LivingEntity) hitEntity);
-            }
-        });
+        Entity hitEntity = Main.getInstance().getRayCaster().entityRayCast(e.getPlayer(), 100);
+        cancelWaitingAction(e.getPlayer());
 
+        if (!(hitEntity instanceof LivingEntity)) {
+            return;
+        }
+
+        action.runWithTarget(e.getPlayer(), (LivingEntity) hitEntity);
         e.setCancelled(true);
     }
 
