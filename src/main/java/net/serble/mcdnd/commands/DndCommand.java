@@ -90,6 +90,17 @@ public class DndCommand implements CommandExecutor {
             return true;
         }
 
+        if (Objects.equals(args[0], "selectchoice")) {
+            if (args.length < 2) {
+                s(p, "&c/dnd selectchoice <choiceIndex>");
+                return false;
+            }
+
+            int choice = Integer.parseInt(args[1]);
+            Main.getInstance().getSpeech().selectChoice(p, choice);
+            return true;
+        }
+
         s(p, "&cInvalid subcommand.");
         return false;
     }

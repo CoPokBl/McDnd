@@ -15,6 +15,7 @@ public final class Main extends JavaPlugin {
     private EnvironmentManager environment;
     private CustomItemManager items;
     private RayCaster rayCaster;
+    private SpeechManager speech;
 
     @Override
     public void onEnable() {
@@ -28,6 +29,7 @@ public final class Main extends JavaPlugin {
         environment = new EnvironmentManager();
         items = new CustomItemManager();
         rayCaster = new RayCaster();
+        speech = new SpeechManager();
 
         Bukkit.getPluginManager().registerEvents(conflict, this);
         Bukkit.getPluginManager().registerEvents(players, this);
@@ -35,6 +37,7 @@ public final class Main extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(environment, this);
         Bukkit.getPluginManager().registerEvents(items, this);
         Bukkit.getPluginManager().registerEvents(rayCaster, this);
+        Bukkit.getPluginManager().registerEvents(speech, this);
 
         Objects.requireNonNull(getCommand("dnd")).setExecutor(new DndCommand());
 
@@ -81,4 +84,7 @@ public final class Main extends JavaPlugin {
         return rayCaster;
     }
 
+    public SpeechManager getSpeech() {
+        return speech;
+    }
 }

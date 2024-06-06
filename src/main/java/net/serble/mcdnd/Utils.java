@@ -347,4 +347,8 @@ public class Utils {
             p.sendTitle("", Utils.t("&6Gained " + amount + " experience"), 0, 20, 10);
         }
     }
+
+    public static String successFailStr(boolean success) {
+        return t(success ? "&aSuccess" : "&aFailure");
+    }
 }

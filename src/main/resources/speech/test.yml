@@ -1,6 +1,8 @@
 # Action Types
 # - leave
 # - jump (Specify 'target')
+#
+# If there is only one choice it is activated automatically
 
 data:
   intro:
@@ -27,7 +29,11 @@ data:
       - "Narrator: Ok bye!"
       - "..."
       - "Narrator: Welcome back!"
-    actions:
+    choices:
       go-back:
-        type: "jump"
-        target: "intro"
+        text: ""
+        skill: "none"
+        success:
+          go-back:
+            type: "jump"
+            target: "intro"
